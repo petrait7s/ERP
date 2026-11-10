@@ -7,7 +7,7 @@
 
 | | |
 |---|---|
-| Customer | Discrete/process manufacturer or distributor, 150–1,500 staff, 1–5 sites, 5k–50k SKUs |
+| Customer | **Product-importing business** (importer-distributor; manufacturing modules optional), 100–1,500 staff, 1–5 sites, 5k–50k SKUs, multi-currency |
 | Volume | ~1–5 M ledger lines/month, ~500 concurrent users. **Correctness and explainability beat raw scale.** |
 | Non-goals | Hyperscale multi-tenant SaaS, ERP-for-everything (no retail POS, no full HCM suite), clone of SAP/Odoo menus |
 
@@ -69,7 +69,7 @@ Standard, FIFO, weighted-average are interchangeable *cost policies* applied to 
 │ EDGE: AuthN (OIDC/SAML/passkeys) · AuthZ (RBAC+ABAC+SoD) · rate limit · tenant│
 └───────────────┬────────────────────────────────────────────────────────────┘
 ┌───────────────▼────────────────────────────────────────────────────────────┐
-│                MODULAR MONOLITH  (one Go binary, enforced boundaries)        │
+│                MODULAR MONOLITH  (one Rust binary, crate-enforced boundaries)        │
 │                                                                              │
 │  Commands ──► Domain modules ──► LEDGER KERNEL ──► Outbox                    │
 │               Catalog  Parties   (append-only      │                         │
@@ -92,8 +92,8 @@ Standard, FIFO, weighted-average are interchangeable *cost policies* applied to 
 
 | Decision | Choice | Why |
 |---|---|---|
-| Deployment unit | **Modular monolith**, 1 binary, N worker roles via flags | Mid-size ops team (2–4 people) cannot run 25 services. Module boundaries are enforced at compile time (Go `internal/` + arch tests), so splitting later is a mechanical step. |
-| Language | **Go** core, **TypeScript** UI | Boring, fast, static, easy to hire/audit. Contracts in Protobuf → generated Go and TS types, so UI and API cannot drift. |
+| Deployment unit | **Modular monolith**, 1 binary, N worker roles via flags | Mid-size ops team (2–4 people) cannot run 25 services. Module boundaries are enforced at compile time (one Cargo crate per module, `pub(crate)` APIs, `cargo-deny`/arch tests), so splitting later is a mechanical step. |
+| Language | **Rust** end to end: Tokio + Axum + Tonic + SQLx server, **Leptos → WebAssembly** UI, wgpu canvases, Tauri handheld shell | No GC pauses, memory-safe financial kernel, one set of domain types shared by server and UI so they cannot drift. Money is `rust_decimal` with explicit currency; SQLx checks queries at compile time. |
 | DB | **PostgreSQL only** for system of record | ACID, RLS, partitioning, JSONB, range types (bitemporal), LISTEN/NOTIFY, logical decoding. One thing to back up. |
 | Consistency | Strong inside a module/ledger transaction; **eventual for projections**, with *read-your-writes tokens* | A command returns a ledger position; a query can say "wait until position ≥ N". UI never shows stale after the user's own write. |
 | Events vs CRUD | **Event-sourced ledger kernel; plain relational for master data** | Don't event-source a customer address. Do event-source stock moves, postings, commitments. |
@@ -321,4 +321,42 @@ Same data, different default Workbench: *Planner* (Floor Twin + Promise Board), 
 1. Primary vertical (discrete vs process manufacturing changes Make: lot-genealogy/yield vs routings/OEE).
 2. Home market(s): drives tax, e-invoicing and localisation scope in Phase 1.
 3. Hosting: customer-hosted (k8s/VMs) vs managed cloud single-tenant.
-4. Team size/skills: if no Go skills, the same architecture works in Kotlin/Java or Rust; the kernel design is language-independent.
+4. Team: Rust skills confirmed as the platform decision (see section 14).
+
+---
+
+## 14. Import-trade vertical on a Rust core
+
+Decision: the system is built in Rust and targets **product-importing businesses**. The overview demo is `web/overview/index.html` (a JavaScript prototype of the Atelier UI; production compiles the same screens from Rust to WebAssembly).
+
+### Domain additions (all expressed in the ledger primitives of section 2)
+| Concept | Modelling |
+|---|---|
+| Supplier PO, proforma | Commitments (supplier side), with Incoterm and payment-term attributes |
+| Payment: TT advance, LC at sight | Events on the value axis (`payment.sent.advance`, `lc.opened`); LC margin as a Place |
+| Shipment, container, BL | A Strand segment: `shipment.shipped` moves Things from *Supplier* to the *In-transit* Place |
+| Customs: lodgement, assessment, release | Workflow with document checklist; duty and VAT are Events that capitalise into landed cost |
+| Landed cost | Projection (cost policy `cost.landed`): FOB + freight + insurance + duty + port + clearing + trucking, allocated by value, weight or quantity; VAT tracked as recoverable cash timing |
+| FX | Rates are Events; exposure is a projection over open foreign-currency payables minus forwards |
+| Demurrage / detention | Clock projection from vessel ETA, free days and release plan; alerts via `demurrage.alert` policy |
+| Batch/lot compliance (RoHS, CE) | Strand traversal forward from the receipt gives the recall set |
+| Replenishment | Cover vs sea lead time, container packing (volume and weight), cash required |
+
+### Rust workspace
+```
+weft-kernel     ledger, invariants, hash chain
+weft-domain     shared types (Party, Thing, Event, Commitment) used by server AND UI
+weft-import     PO, shipment, customs, landed cost, demurrage
+weft-money      rust_decimal, FX, posting policies
+weft-policy     CEL/Rego evaluator + 90-day simulator
+weft-workflow   durable state machines on Postgres
+weft-store      sqlx, bitemporal repositories, outbox
+weft-api        axum + tonic, auth, live queries
+weft-solver     replenishment and scheduling (CP-SAT bridge)
+weft-ext        wasmtime sandbox for tenant extensions
+weft-ui         Leptos (signals, no virtual DOM) compiled to WASM; wgpu for map and graph canvases
+weft-desk       Tauri shell for warehouse handhelds and desktop
+```
+
+### Integration emphasis for importers
+Carrier and vessel tracking feeds, customs broker / single-window filings, bank LC and TT messaging (SWIFT MT/ISO 20022), supplier portals for document upload (CI, PL, BL, CoO, conformity certificates), FX rate feeds.
