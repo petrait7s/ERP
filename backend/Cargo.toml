@@ -1,0 +1,42 @@
+[package]
+name = "weft-erp"
+version = "1.0.0"
+edition = "2021"
+description = "Bangladesh-first import ERP backend (Axum + SQLx + PostgreSQL)"
+
+[lib]
+name = "weft_erp"
+path = "src/lib.rs"
+
+[[bin]]
+name = "weft-erp"
+path = "src/main.rs"
+
+[dependencies]
+axum = { version = "0.7", features = ["macros"] }
+tokio = { version = "1", features = ["full"] }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "postgres", "uuid", "chrono", "rust_decimal", "json", "migrate", "macros"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rust_decimal = { version = "1", features = ["serde-float"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+argon2 = "0.5"
+jsonwebtoken = "9"
+tower = { version = "0.5", features = ["util"] }
+tower-http = { version = "0.6", features = ["cors", "trace", "limit", "set-header"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+thiserror = "1"
+dotenvy = "0.15"
+rand = "0.8"
+sha2 = "0.10"
+hex = "0.4"
+
+[dev-dependencies]
+http-body-util = "0.1"
+
+[profile.dev]
+debug = 0
+[profile.dev.package."*"]
+opt-level = 1
