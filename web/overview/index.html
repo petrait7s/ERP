@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-density="standard">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WEFT Atelier — ERP overview demo</title>
+<style>
+:root{--bg:oklch(.165 .012 265);--bg2:oklch(.2 .013 265);--pan:oklch(.235 .014 265);--pan2:oklch(.27 .015 265);--line:oklch(.33 .015 265);--tx:oklch(.96 .005 265);--mut:oklch(.74 .012 265);--dim:oklch(.58 .012 265);--acc:oklch(.74 .16 285);--acc2:oklch(.84 .11 285);--accbg:oklch(.74 .16 285/.14);--ok:oklch(.8 .16 155);--warn:oklch(.83 .15 80);--bad:oklch(.72 .19 25);--r:14px;--pad:16px;--gap:14px;--fs:14px;--shadow:0 18px 50px oklch(0 0 0/.4);--glass:oklch(.235 .014 265/.74);--aura:oklch(.74 .16 285/.13)}
+[data-theme=light]{--bg:oklch(.975 .004 265);--bg2:oklch(.955 .005 265);--pan:oklch(1 0 0);--pan2:oklch(.968 .005 265);--line:oklch(.9 .008 265);--tx:oklch(.22 .02 265);--mut:oklch(.45 .02 265);--dim:oklch(.6 .015 265);--acc:oklch(.52 .2 285);--acc2:oklch(.45 .2 285);--accbg:oklch(.52 .2 285/.09);--ok:oklch(.55 .15 155);--warn:oklch(.62 .15 70);--bad:oklch(.55 .2 25);--shadow:0 14px 36px oklch(.3 .02 265/.16);--glass:oklch(1 0 0/.78);--aura:oklch(.7 .15 285/.12)}
+[data-density=calm]{--pad:22px;--gap:20px;--fs:15px}
+[data-density=dense]{--pad:10px;--gap:9px;--fs:12.5px}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:radial-gradient(1200px 600px at 85% -10%,var(--aura),transparent 60%),radial-gradient(900px 500px at -10% 110%,oklch(.74 .12 180/.08),transparent 60%),var(--bg);color:var(--tx);font:var(--fs)/1.45 ui-sans-serif,Inter,"Segoe UI",system-ui,sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.num,.mono,td.n{font-variant-numeric:tabular-nums}
+.mono{font-family:ui-monospace,"JetBrains Mono",SFMono-Regular,Menlo,monospace}
+.shell{display:grid;grid-template-columns:68px 1fr;grid-template-rows:58px 1fr;height:100vh}
+/* rail */
+.rail{grid-row:1/3;border-right:1px solid var(--line);background:var(--glass);backdrop-filter:blur(14px);display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:4px;z-index:5}
+.logo{width:38px;height:38px;margin-bottom:10px}
+.rb{position:relative;width:46px;height:46px;border-radius:13px;border:0;background:transparent;color:var(--mut);display:grid;place-items:center;transition:.18s}
+.rb svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.rb:hover{background:var(--pan2);color:var(--tx)}
+.rb.on{background:var(--accbg);color:var(--acc2);box-shadow:inset 0 0 0 1px var(--acc)}
+.rb.rec::after{content:"";position:absolute;top:8px;right:8px;width:6px;height:6px;border-radius:9px;background:var(--acc)}
+.rb .tip{position:absolute;left:56px;white-space:nowrap;background:var(--pan2);border:1px solid var(--line);padding:3px 9px;border-radius:8px;font-size:12px;color:var(--tx);opacity:0;pointer-events:none;transform:translateX(-4px);transition:.15s;z-index:20;box-shadow:var(--shadow)}
+.rb:hover .tip{opacity:1;transform:none}
+/* top */
+.top{display:flex;align-items:center;gap:14px;padding:0 18px;border-bottom:1px solid var(--line);background:var(--glass);backdrop-filter:blur(14px);z-index:4}
+.crumb{font-weight:650;font-size:1.05em;letter-spacing:.01em;white-space:nowrap}
+.crumb small{color:var(--dim);font-weight:500;margin-left:8px}
+.cmd{flex:1;max-width:520px;margin:0 auto;display:flex;align-items:center;gap:10px;height:38px;padding:0 12px;border-radius:12px;border:1px solid var(--line);background:var(--pan);color:var(--dim);text-align:left;transition:.15s}
+.cmd:hover{border-color:var(--acc);color:var(--mut)}
+.cmd kbd,.kbd{margin-left:auto;font:11px ui-monospace,monospace;border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:var(--mut);background:var(--pan2)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--pan)}
+.seg button{border:0;background:transparent;padding:6px 10px;font-size:12px;color:var(--mut)}
+.seg button.on{background:var(--accbg);color:var(--acc2)}
+.sel{height:34px;border-radius:10px;border:1px solid var(--line);background:var(--pan);padding:0 10px;font-size:13px}
+.ibtn{width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--pan);display:grid;place-items:center}
+.ibtn:hover{border-color:var(--acc)}
+/* main */
+.main{overflow:auto;padding:calc(var(--pad) + 6px) calc(var(--pad) + 10px) 110px;position:relative}
+.main.in>*{animation:rise .35s cubic-bezier(.2,.7,.2,1) both}
+.main.in>*:nth-child(2){animation-delay:.04s}.main.in>*:nth-child(3){animation-delay:.08s}.main.in>*:nth-child(4){animation-delay:.12s}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+h1{font-size:1.75em;margin:0 0 4px;letter-spacing:-.02em;font-weight:680}
+.sub{color:var(--mut);margin:0 0 calc(var(--gap) + 4px)}
+.grid{display:grid;gap:var(--gap)}
+.g6{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+.g2{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}
+.g3{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+@media(max-width:1000px){.g2{grid-template-columns:1fr}.shell{grid-template-columns:56px 1fr}.cmd span{display:none}}
+.card{background:var(--pan);border:1px solid var(--line);border-radius:var(--r);padding:var(--pad);position:relative}
+.card h3{margin:0 0 10px;font-size:.78em;text-transform:uppercase;letter-spacing:.09em;color:var(--dim);font-weight:650;display:flex;align-items:center;gap:8px}
+.card h3 .r{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:500}
+.btn{border:1px solid var(--line);background:var(--pan2);border-radius:10px;padding:6px 12px;font-size:.92em;transition:.15s}
+.btn:hover{border-color:var(--acc);background:var(--accbg)}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:oklch(.15 .02 285);font-weight:620}
+.btn.pri:hover{filter:brightness(1.08)}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:99px;padding:3px 11px;font-size:12px;background:var(--pan);color:var(--mut)}
+.chip.on{background:var(--accbg);border-color:var(--acc);color:var(--acc2)}
+.badge{display:inline-block;padding:1px 8px;border-radius:99px;font-size:11px;font-weight:600;border:1px solid transparent}
+.b-ok{color:var(--ok);background:color-mix(in oklch,var(--ok) 14%,transparent)}.b-warn{color:var(--warn);background:color-mix(in oklch,var(--warn) 14%,transparent)}.b-bad{color:var(--bad);background:color-mix(in oklch,var(--bad) 14%,transparent)}.b-acc{color:var(--acc2);background:var(--accbg)}.b-n{color:var(--mut);background:var(--pan2)}
+.up{color:var(--ok)}.dn{color:var(--bad)}.mut{color:var(--mut)}.dim{color:var(--dim)}
+.row{display:flex;align-items:center;gap:10px}.wrap{flex-wrap:wrap}.sp{margin-left:auto}
+/* kpi */
+.kpi{text-align:left;background:var(--pan);border:1px solid var(--line);border-radius:var(--r);padding:var(--pad);transition:.2s;position:relative;overflow:hidden}
+.kpi:hover{border-color:var(--acc);transform:translateY(-2px);box-shadow:var(--shadow)}
+.kl{font-size:.8em;color:var(--mut)}.kvv{font-size:1.9em;font-weight:680;letter-spacing:-.02em;margin:2px 0}.kd{font-size:.82em}
+.spark{display:block;margin-top:6px;width:140px;height:34px}
+.kpi .why{position:absolute;right:10px;top:10px;font-size:11px;color:var(--dim);border:1px solid var(--line);border-radius:99px;padding:0 7px}
+.kpi:hover .why{color:var(--acc2);border-color:var(--acc)}
+/* feed */
+.item{display:grid;grid-template-columns:10px 1fr auto;gap:12px;padding:14px 0;border-top:1px solid var(--line);transition:.35s}
+.item:first-of-type{border-top:0}
+.item.done{opacity:.4;filter:grayscale(1)}
+.sev{width:10px;height:10px;border-radius:99px;margin-top:6px}
+.sev.bad{background:var(--bad);box-shadow:0 0 0 4px color-mix(in oklch,var(--bad) 20%,transparent);animation:pl 2s infinite}
+.sev.warn{background:var(--warn)}.sev.acc{background:var(--acc)}
+@keyframes pl{50%{box-shadow:0 0 0 8px transparent}}
+.it-t{font-weight:620}.it-s{color:var(--mut);font-size:.92em;margin:2px 0 8px}
+.acts{display:flex;flex-wrap:wrap;gap:6px}
+.meter{width:110px;height:6px;border-radius:9px;background:var(--pan2);overflow:hidden}.meter i{display:block;height:100%;border-radius:9px}
+.ro .acts .btn,.ro .btn.act{opacity:.35;pointer-events:none}
+/* tables */
+table{border-collapse:collapse;width:100%}
+th{font-size:.74em;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);font-weight:600;position:sticky;top:0;background:var(--pan)}
+td{padding:7px 10px;border-bottom:1px solid color-mix(in oklch,var(--line) 55%,transparent)}
+td.n,th.n{text-align:right}
+tbody tr{transition:.12s}tbody tr.clk{cursor:pointer}tbody tr.clk:hover{background:var(--accbg)}
+input.in,textarea.in{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:8px 12px;outline:none}
+input.in:focus,textarea.in:focus{border-color:var(--acc)}
+/* dock */
+.dock{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:6;display:flex;align-items:center;gap:14px;background:var(--glass);backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:18px;padding:9px 16px;box-shadow:var(--shadow);width:min(720px,calc(100vw - 120px))}
+.dock input[type=range]{flex:1;accent-color:var(--acc)}
+.dock .dl{font-size:12px;color:var(--mut);white-space:nowrap}.dock b{color:var(--tx)}
+.banner{position:sticky;top:-8px;z-index:3;margin:-6px 0 14px;padding:9px 14px;border-radius:12px;background:color-mix(in oklch,var(--warn) 16%,var(--pan));border:1px solid color-mix(in oklch,var(--warn) 50%,transparent);display:flex;align-items:center;gap:12px;font-size:.92em}
+/* side card */
+.side{position:fixed;right:14px;top:70px;bottom:88px;width:410px;max-width:calc(100vw - 100px);background:var(--glass);backdrop-filter:blur(20px);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);z-index:8;transform:translateX(120%);transition:transform .35s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column}
+.side.open{transform:none}
+.side header{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.side header b{font-size:1.05em}.side .body{padding:14px 16px;overflow:auto;flex:1}
+.lineage{border-left:2px solid var(--line);margin-left:6px;padding-left:16px}
+.lineage .ln{position:relative;padding:0 0 14px}.lineage .ln::before{content:"";position:absolute;left:-23px;top:5px;width:10px;height:10px;border-radius:9px;background:var(--acc);box-shadow:0 0 0 3px var(--bg2)}
+pre.json{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:11.5px;overflow:auto;margin:6px 0}
+/* palette */
+.ov{position:fixed;inset:0;background:oklch(0 0 0/.5);backdrop-filter:blur(4px);z-index:30;display:none;align-items:flex-start;justify-content:center;padding-top:11vh}
+.ov.open{display:flex}
+.pal{width:min(880px,94vw);background:var(--pan);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);overflow:hidden;animation:rise .2s both}
+.pal input{width:100%;border:0;border-bottom:1px solid var(--line);background:transparent;padding:16px 20px;font-size:1.15em;outline:none}
+.pal .cols{display:grid;grid-template-columns:1fr 1fr;min-height:320px;max-height:52vh}
+.pal .list{overflow:auto;border-right:1px solid var(--line);padding:6px}
+.pal .opt{padding:9px 12px;border-radius:10px;cursor:pointer;display:flex;gap:10px;align-items:center}
+.pal .opt.sel{background:var(--accbg);box-shadow:inset 0 0 0 1px var(--acc)}
+.pal .prev{padding:16px;overflow:auto}
+.pal .foot{border-top:1px solid var(--line);padding:8px 16px;font-size:12px;color:var(--dim);display:flex;gap:14px}
+@media(max-width:700px){.pal .cols{grid-template-columns:1fr}.pal .prev{display:none}}
+/* toast */
+#toasts{position:fixed;left:84px;bottom:84px;z-index:40;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--pan2);border:1px solid var(--acc);border-radius:12px;padding:10px 14px;box-shadow:var(--shadow);display:flex;gap:12px;align-items:center;animation:rise .25s both;max-width:420px}
+.toast button{border:0;background:transparent;color:var(--acc2);font-weight:650}
+/* svg shared */
+svg text{fill:var(--tx);font-family:inherit}
+.axis{stroke:var(--line)}.lbl{fill:var(--dim)!important;font-size:11px}
+/* strand */
+.nd rect{fill:var(--pan2);stroke:var(--line);stroke-width:1;rx:10;transition:.2s}
+.nd:hover rect{stroke:var(--acc)}.nd{cursor:pointer;transition:opacity .3s}
+.nd.future rect{stroke-dasharray:4 3}.nd.dev rect{stroke:var(--warn)}
+.nd.on rect{stroke:var(--acc);fill:var(--accbg);stroke-width:2}
+.dim-all .nd:not(.on){opacity:.3}
+.lk{fill:none;stroke:var(--dim);stroke-width:1.5;opacity:.6;transition:.3s}.lk.f{stroke:var(--acc);stroke-dasharray:5 4}
+.dim-all .lk:not(.on){opacity:.1}.lk.on{stroke:var(--acc);opacity:1;stroke-width:2.4}
+/* flow */
+.fl{opacity:.32;transition:.2s}.fl:hover{opacity:.7}
+svg[data-mode=cash] .fl[data-k=mat]{opacity:.06}svg[data-mode=mat] .fl[data-k=cash]{opacity:.06}
+svg[data-mode=risk] .fl{opacity:.1}svg[data-mode=risk] .fl[data-r="1"]{opacity:.75}
+.fnode text{paint-order:stroke;stroke:var(--pan);stroke-width:4px;stroke-linejoin:round}
+.part{fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-dasharray:1 18;opacity:.5;animation:fm 2.4s linear infinite;pointer-events:none}
+@keyframes fm{to{stroke-dashoffset:-19}}
+.fnode{cursor:pointer}.fnode.hot rect{animation:glow 1.8s infinite}
+@keyframes glow{50%{filter:drop-shadow(0 0 8px var(--bad))}}
+/* floor */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:10px;margin-bottom:var(--gap)}
+.tile{background:var(--pan);border:1px solid var(--line);border-radius:12px;padding:9px 11px;position:relative}
+.tile .st{position:absolute;right:10px;top:10px;width:8px;height:8px;border-radius:9px}
+.lane{display:grid;grid-template-columns:120px 1fr;gap:10px;align-items:center;margin-bottom:8px}
+.track{position:relative;height:46px;background:repeating-linear-gradient(90deg,transparent 0 89px,var(--line) 89px 90px),var(--bg2);border:1px solid var(--line);border-radius:10px;display:flex;overflow:hidden}
+.track.tgt{outline:2px solid var(--acc);background-color:var(--accbg)}.track.bad{outline:2px solid var(--bad)}
+.job{height:100%;border-right:1px solid var(--bg);background:linear-gradient(180deg,color-mix(in oklch,var(--c) 80%,transparent),color-mix(in oklch,var(--c) 55%,transparent));display:flex;flex-direction:column;justify-content:center;padding:0 7px;font-size:11px;cursor:grab;touch-action:none;user-select:none;flex:none;overflow:hidden;white-space:nowrap;color:#fff;position:relative}
+.job.late{box-shadow:inset 0 -3px 0 var(--bad)}.job:active{cursor:grabbing}
+.job small{opacity:.8}
+.ghost{position:fixed;z-index:50;pointer-events:none;opacity:.9;box-shadow:var(--shadow);border-radius:8px;height:46px}
+/* promise */
+.cols5{display:grid;grid-template-columns:repeat(5,minmax(200px,1fr));gap:var(--gap);overflow-x:auto;padding-bottom:6px}
+.col{background:var(--bg2);border:1px dashed var(--line);border-radius:var(--r);padding:10px;min-height:340px;transition:.15s}
+.col.over{border-color:var(--acc);background:var(--accbg)}
+.col h4{margin:0 0 8px;font-size:.85em;display:flex;gap:6px;align-items:baseline}
+.pc{background:var(--pan);border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px;cursor:grab;transition:.15s}
+.pc:hover{border-color:var(--acc);transform:translateY(-1px)}.pc.drag{opacity:.4}
+.band{position:relative;height:7px;background:var(--pan2);border-radius:9px;margin:6px 0 3px}
+.band i{position:absolute;top:0;bottom:0;border-radius:9px}
+/* policy */
+.ed{position:relative;height:210px;background:var(--bg2);border:1px solid var(--line);border-radius:12px}
+.ed pre,.ed textarea{position:absolute;inset:0;margin:0;padding:12px 14px;font:12.5px/1.65 ui-monospace,Menlo,monospace;white-space:pre-wrap;word-break:break-word;border:0;overflow:auto;tab-size:2}
+.ed textarea{background:transparent;color:transparent;caret-color:var(--tx);resize:none;outline:none;width:100%}
+.ed pre{pointer-events:none}.k1{color:var(--acc2)}.k2{color:var(--warn)}.k3{color:var(--ok)}.k4{color:var(--dim)}
+.bars{display:flex;align-items:flex-end;gap:3px;height:90px}
+.bars i{flex:1;background:var(--acc);border-radius:3px 3px 0 0;opacity:.85;min-height:2px}
+/* misc */
+.ticker{font:12px ui-monospace,monospace;height:300px;overflow:hidden;display:flex;flex-direction:column-reverse}
+.ticker div{padding:4px 0;border-bottom:1px solid color-mix(in oklch,var(--line) 50%,transparent);animation:rise .3s both;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gauge{height:8px;background:var(--pan2);border-radius:9px;overflow:hidden}.gauge i{display:block;height:100%;background:var(--ok);transition:width .6s}
+.ring{--p:0;width:92px;height:92px;border-radius:50%;background:conic-gradient(var(--acc) calc(var(--p)*1%),var(--pan2) 0);display:grid;place-items:center;transition:.6s}
+.ring::after{content:attr(data-l);width:74px;height:74px;border-radius:50%;background:var(--pan);display:grid;place-items:center;font-weight:680;font-size:1.2em}
+.tabs{display:flex;gap:6px;margin-bottom:12px}
+.stack{display:flex;height:22px;border-radius:8px;overflow:hidden}.stack i{display:block;height:100%}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="rail" id="rail"></nav>
+  <header class="top">
+    <div class="crumb" id="crumb"></div>
+    <button class="cmd" id="cmdbtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>Ask or command… “what if ACME slips 2 weeks”</span><kbd>⌘K</kbd></button>
+    <select class="sel" id="role" title="Role workspace"></select>
+    <div class="seg" id="dens"><button data-d="calm">Calm</button><button data-d="standard" class="on">Std</button><button data-d="dense">Dense</button></div>
+    <button class="ibtn" id="theme" title="Theme">◐</button>
+  </header>
+  <main class="main in" id="main"></main>
+</div>
+<aside class="side" id="side"><header><button class="btn" id="back" style="display:none">←</button><b id="stitle"></b><span class="dim" id="ssub"></span><button class="btn sp" id="sclose">✕</button></header><div class="body" id="sbody"></div></aside>
+<div class="dock" id="dock"><span class="dl">⏱ <b>Time</b></span><input type="range" id="scrub" min="-29" max="0" step="1" value="0"><span class="dl" id="scrubl"></span><button class="btn" id="now">Now</button></div>
+<div class="ov" id="ov"><div class="pal"><input id="pin" placeholder="Type a command or question…" autocomplete="off"><div class="cols"><div class="list" id="plist"></div><div class="prev" id="pprev"></div></div><div class="foot"><span>↑↓ navigate</span><span>↵ run</span><span>esc close</span><span class="sp">The assistant only <b>proposes</b> typed commands · kernel validates · you confirm</span></div></div></div>
+<div id="toasts"></div>
+
+<script>
+/* ======================= helpers ======================= */
+const $=(s,e=document)=>e.querySelector(s),$$=(s,e=document)=>[...e.querySelectorAll(s)];
+const rng=s=>()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+const fmt=n=>Math.round(n).toLocaleString('en-US');
+const eur=n=>{const a=Math.abs(n),s=n<0?'−':'';return s+'€'+(a>=1e6?(a/1e6).toFixed(2)+'M':a>=1e3?Math.round(a/1e3)+'k':Math.round(a))};
+const TODAY=new Date(2026,10,10),dOf=o=>new Date(TODAY.getTime()+o*864e5);
+const fD=d=>d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+const fDW=d=>d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const fnv=s=>{let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return(h>>>0).toString(16).padStart(8,'0')};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(msg,undo){const t=document.createElement('div');t.className='toast';t.innerHTML=`<span>${msg}</span>`+(undo?'<button>Undo</button>':'');$('#toasts').append(t);let k=setTimeout(()=>t.remove(),undo?6000:3500);if(undo)$('button',t).onclick=()=>{clearTimeout(k);undo();t.remove()}}
+
+/* ======================= state ======================= */
+const S={view:'pulse',role:'planner',t:0,resolved:new Set(),allRoles:false,strand:'so2231',trace:'fwd',hl:new Set(),scen:0,sp:[14,4,5],cards:[],ltab:'events',lq:'',lkind:'all',pf:'all',polSel:0,timer:null};
+const ROLES={planner:{n:'Planner',home:'pulse',rec:['floor','promise','scenario']},buyer:{n:'Buyer',home:'pulse',rec:['flow','strand','promise']},controller:{n:'Controller',home:'pulse',rec:['ledger','policy','money']},warehouse:{n:'Warehouse lead',home:'pulse',rec:['floor','strand','flow']},exec:{n:'Executive',home:'pulse',rec:['pulse','scenario','money']}};
+const IC={pulse:'<path d="M3 12h4l2-6 4 12 2-6h6"/>',strand:'<circle cx="5" cy="12" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 12h4c3 0 3-6 6-6M11 12c3 0 3 6 6 6"/>',flow:'<path d="M3 6c8 0 8 6 18 6M3 18c8 0 8-6 18-6"/><path d="M3 12h18" opacity=".5"/>',floor:'<rect x="3" y="4" width="7" height="7" rx="1.5"/><rect x="14" y="4" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="6" rx="1.5"/><path d="M14 17h7"/>',promise:'<rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="10" rx="1.5"/><rect x="17" y="4" width="4" height="13" rx="1.5"/>',ledger:'<path d="M6 3h12v18H6z"/><path d="M9 8h6M9 12h6M9 16h4"/>',policy:'<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>',scenario:'<path d="M6 3v6a4 4 0 0 0 4 4h4a4 4 0 0 1 4 4v4"/><circle cx="6" cy="3" r="1.5"/><circle cx="18" cy="21" r="1.5"/><path d="M6 13v8"/>',money:'<circle cx="12" cy="12" r="9"/><path d="M14.5 9a2.5 2 0 0 0-2.5-1.5c-1.5 0-2.5.8-2.5 2s1 1.7 2.5 2 2.5.8 2.5 2-1 2-2.5 2A2.5 2 0 0 1 9.5 15M12 6v2M12 16v2"/>',spine:'<path d="M12 3v18"/><path d="M6 6h12M6 11h12M6 16h12" opacity=".6"/><circle cx="12" cy="3" r="1.5"/><circle cx="12" cy="21" r="1.5"/>'};
+const VIEWS=[['pulse','Pulse','Promises at risk, anomalies, approvals'],['strand','Strand View','One causal thread, quote to cash and recall'],['flow','Flow Map','Live material and cash flow'],['floor','Floor Twin','Machines, queues, solver ghost-plans'],['promise','Promise Board','The honest order book'],['ledger','Ledger Studio','Events and their projections'],['policy','Policy Lab','Simulate rules before shipping'],['scenario','Scenario Room','Fork the company, compare, merge'],['money','Money','Continuous close and reconciliation'],['spine','Spine','Kernel, projectors, invariants']];
+
+/* ======================= data ======================= */
+const KP=[
+{id:'otif',n:'Promise reliability',u:'%',v:94.2,d:1,seed:11,vol:.7,up:1,f:'fulfilments on or before promised date ÷ commitments due, trailing 30 d',pol:'metric.otif v3'},
+{id:'cash',n:'Cash position',u:'€k',v:2410,d:0,seed:12,vol:70,up:1,f:'Σ legs on Bank places (value axis), all currencies at ledger FX events',pol:'proj.cash v7'},
+{id:'inv',n:'Inventory value',u:'€k',v:6820,d:0,seed:13,vol:55,up:0,f:'Σ qty × cost per cost policy "weighted-average" over Flow places',pol:'cost.wavg v5'},
+{id:'wip',n:'Work in progress',u:'€k',v:1930,d:0,seed:14,vol:40,up:0,f:'issued materials + absorbed labour − completed output',pol:'cost.wip v4'},
+{id:'gm',n:'Gross margin',u:'%',v:31.4,d:1,seed:15,vol:.35,up:1,f:'(revenue − COGS) ÷ revenue per Strand, posted invoices',pol:'post.margin v9'},
+{id:'cap',n:'Capacity load',u:'%',v:83,d:0,seed:16,vol:1.6,up:0,f:'committed machine-hours ÷ available hours, next 4 weeks',pol:'sched.load v2'}];
+KP.forEach(k=>{const r=rng(k.seed);k.s=Array(30);k.s[29]=k.v;for(let i=28;i>=0;i--)k.s[i]=k.s[i+1]+(r()-.47)*k.vol});
+const kv=k=>k.s[29+S.t];
+const fv=(k,v)=>k.u==='%'?v.toFixed(k.d)+'%':'€'+(v>=1000?(v/1000).toFixed(2)+'M':Math.round(v)+'k');
+function spark(k){const s=k.s,mn=Math.min(...s),mx=Math.max(...s),w=140,h=34,X=i=>i/29*w,Y=v=>h-3-(v-mn)/(mx-mn||1)*(h-6),idx=29+S.t,p=s.map((v,i)=>X(i).toFixed(1)+','+Y(v).toFixed(1));return`<svg class="spark" viewBox="0 0 ${w} ${h}"><polyline points="${p.slice(0,idx+1).join(' ')}" fill="none" stroke="var(--acc)" stroke-width="1.7"/><polyline points="${p.slice(idx).join(' ')}" fill="none" stroke="var(--dim)" stroke-dasharray="2 3"/><circle cx="${X(idx)}" cy="${Y(s[idx])}" r="3" fill="var(--acc)"/></svg>`}
+
+const PUL=[
+{id:'p1',sev:'bad',day:0,roles:['planner','buyer','exec'],t:'SO-2231 · Apex Robotics — promise at risk',sub:'Supplier ACME Steel PO-8812 is 6 days late; 320 pcs cannot ship by Fri 14 Nov.',risk:78,at:'€86k',strand:'so2231',acts:[['Expedite PO-8812','+€1.2k air freight · confidence → 94%'],['Substitute SS-316','−1.1 pt margin · confidence → 88%'],['Split ship 60/40','ships 480 pcs on Fri']]},
+{id:'p2',sev:'warn',day:-1,roles:['planner','warehouse'],t:'Machine M3 (CNC 5-axis) vibration +14% over baseline',sub:'Anomaly detected on spindle telemetry. Failure likelihood 31% within 10 days; 4 jobs queued.',risk:62,at:'€210k',strand:null,acts:[['Schedule PM Thu 06:00','competes fairly in solver'],['Re-route 3 jobs to M5','needs 2 re-tooling hours']]},
+{id:'p3',sev:'warn',day:0,roles:['controller','buyer'],t:'INV-5530 Nordwerk — 3-way mismatch (480 billed vs 500 received)',sub:'Variance 4.2% exceeds policy approval.match ≤ 2%. Payment due in 3 days.',risk:55,at:'€12k',strand:'lot7781',acts:[['Hold payment','no cash event emitted'],['Request credit note','drafts correction event']]},
+{id:'p4',sev:'acc',day:0,roles:['controller','exec'],t:'Cash dips to −€182k in week 47 (forecast)',sub:'Driven by ACME slip + 2 large AP runs. Scenario Room has a ready-made fork.',risk:48,at:'€182k',strand:null,acts:[['Open in Scenario Room','fork at seq 482,193']]},
+{id:'p5',sev:'acc',day:-2,roles:['controller','buyer','exec'],t:'Approval: PO-8821 · Boreal Polymers · €48,200',sub:'Above your L1 limit €25k. You are L2 approver. Price within 1.4% of contract.',risk:12,at:'€48k',strand:null,acts:[['Approve','emits approval event'],['Reject','returns to buyer']]},
+{id:'p6',sev:'bad',day:-5,roles:['warehouse','planner','controller'],t:'Lot L-7781 · NCR-212 — 2 shipments auto-quarantined',sub:'3 of 50 samples failed hardness. Genealogy shows 320 pcs issued to WO-4388/4390.',risk:71,at:'€64k',strand:'lot7781',acts:[['Open recall trace','forward trace in Strand View'],['Draft customer notice','render from template v6']]},
+{id:'p7',sev:'warn',day:-9,roles:['planner','exec'],t:'Nordwerk SO-2244 — promised date confidence fell to 74%',sub:'Paint line F1 booked solid; renegotiate or add Saturday shift.',risk:60,at:'€41k',strand:null,acts:[['Add Sat shift','+€2.1k overtime'],['Renegotiate +2 d','draft to customer']]}];
+
+/* ledger */
+const ACC={1000:'Bank',1100:'Accounts receivable',1300:'Raw inventory',1350:'Finished goods',1400:'Work in progress',2000:'Accounts payable',2150:'GRNI',3000:'Equity',4000:'Revenue',5000:'COGS'};
+const OPEN={1000:1800000,1300:900000,1350:500000,2000:-400000,3000:-2800000};
+const CH=[['po.received',1300,2150,.5,'Supplier → Raw-WH'],['invoice.supplier.posted',2150,2000,.5,''],['goods.issued',1400,1300,.45,'Raw-WH → Line'],['wo.completed',1350,1400,.55,'Line → FG-WH'],['goods.shipped',5000,1350,.55,'FG-WH → Customer'],['invoice.posted',1100,4000,.82,''],['cash.received',1000,1100,.82,''],['payment.sent',2000,1000,.5,'']];
+const CUS=['Apex Robotics','Nordwerk GmbH','Helio Drives','Kestrel Aero','Brightline OEM'],SUP=['ACME Steel','Boreal Polymers','Tessa Bearings'];
+const EV=(()=>{const r=rng(77),ev=[];for(let i=0;i<12;i++){const base=Math.round((24+r()*96)*1000/500)*500,start=-29+i*2.3+r(),cust=CUS[i%5],strand='SO-'+(2210+i*3);CH.forEach((c,k)=>{const day=start+k*.8;if(day>0)return;const amt=Math.round(base*c[3]/.5*.5/100)*100;ev.push({day,amt,kind:c[0],dr:c[1],cr:c[2],strand,party:(k<3||k==7)?SUP[i%3]:cust,flow:c[4],rec:day+(r()<.1?2.5+r():r()*.12)})})}
+ev.sort((a,b)=>a.rec-b.rec);let ph='00000000';ev.forEach((e,i)=>{e.seq=482100+i;e.units=Math.round(e.amt/100);e.hash=fnv(ph+e.seq+e.kind+e.amt+e.strand);e.prev=ph;ph=e.hash;e.restate=(e.rec-e.day)>1.5});return ev})();
+const evVis=()=>EV.filter(e=>e.rec<=S.t+.999);
+
+/* strands */
+const STR={
+so2231:{name:'SO-2231 · Apex Robotics',nodes:[
+['q',0,.04,'Quote Q-901',-26,'accepted'],['so',0,.16,'SO-2231 · 800 pc',-24,'commitment'],['po',0,.28,'PO-8812 ACME',-22,'commitment'],['wo',0,.55,'WO-4410',-8,'commitment'],
+['rc',1,.43,'GRN 60% (3t/5t)',-9,'event','Short shipment: 3 t received of 5 t promised'],['is',1,.58,'Issue to WO-4410',-6,'event'],['wc',1,.7,'Complete 480 pc',-1,'event'],['sh',1,.82,'Ship 480 (60%)',0,'event'],
+['inv',2,.85,'INV-5531 €86k',0,'event'],['cash',2,.965,'Cash +30 d (82%)',30,'future']],
+links:[['q','so'],['so','po'],['po','rc','f'],['so','wo'],['rc','is'],['wo','is'],['is','wc'],['wc','sh'],['so','sh','f'],['sh','inv'],['inv','cash']]},
+lot7781:{name:'Lot L-7781 · recall trace',nodes:[
+['po',0,.08,'PO-8790 Boreal',-31,'commitment'],['ncr',0,.3,'NCR-212 / CAPA',-4,'commitment'],['s1',0,.68,'SO-2210 Nordwerk',-12,'commitment'],['s2',0,.82,'SO-2231 Apex',-24,'commitment'],
+['grn',1,.08,'GRN-771 lot L-7781',-20,'event'],['qc',1,.22,'QC: 3/50 fail',-4,'event','Hardness below 58 HRC on 3 samples'],['i1',1,.4,'Issue → WO-4388',-14,'event'],['i2',1,.54,'Issue → WO-4390',-11,'event'],['h1',1,.68,'Ship Nordwerk 200',-6,'event'],['h2',1,.82,'Ship Apex 120',-3,'event'],['qt',1,.95,'Auto-quarantine ×2',-3,'event'],['cn',2,.9,'Credit note CN-77',0,'future']],
+links:[['po','grn','f'],['grn','qc'],['grn','i1'],['grn','i2'],['qc','ncr'],['i1','h1'],['i2','h1'],['i2','h2'],['s1','h1','f'],['s2','h2','f'],['h1','qt'],['h2','qt'],['qt','cn']]}};
+
+/* promise */
+const CM=[['SO-2231/1','Apex Robotics',86,'800 pcs',0,78,'ACME PO-8812 late'],['SO-2244/2','Nordwerk GmbH',41,'300 pcs',0,74,'Paint line F1 full'],['SO-2250/1','Helio Drives',27,'120 pcs',0,96,''],['SO-2252/1','Kestrel Aero',112,'60 pcs',1,88,'Cert pending'],['SO-2260/3','Brightline OEM',33,'900 pcs',1,91,''],['SO-2262/1','Apex Robotics',58,'400 pcs',1,69,'M3 anomaly'],['SO-2270/1','Nordwerk GmbH',72,'1,200 pcs',2,84,''],['SO-2274/2','Helio Drives',19,'80 pcs',2,97,''],['SO-2281/1','Kestrel Aero',140,'45 pcs',3,76,'Long-lead casting'],['SO-2285/1','Brightline OEM',64,'700 pcs',3,93,''],['SO-2290/1','Apex Robotics',95,'1,000 pcs',4,81,'Forecast only'],['SO-2296/1','Helio Drives',38,'250 pcs',4,90,'']].map(a=>({id:a[0],p:a[1],v:a[2],q:a[3],wk:a[4],c:a[5],why:a[6]}));
+const WK=['This week','Next week','Week +2','Week +3','Later'];
+
+/* floor */
+const GC={cut:'oklch(.62 .15 230)',mach:'oklch(.6 .17 285)',asm:'oklch(.62 .14 165)',qc:'oklch(.65 .15 60)'};
+const MAC0=[['M1','Laser cutter','cut','run',1],['M2','Press brake','cut','run',1],['M3','CNC 5-axis A','mach','warn',.85],['M4','CNC 3-axis','mach','run',1],['M5','CNC 5-axis B','mach','run',1],['A1','Assembly cell 1','asm','run',1],['A2','Assembly cell 2','asm','idle',1],['Q1','CMM inspection','qc','run',1]];
+const JOB0={M1:[['J1','SO-2231',8,24],['J2','SO-2244',6,40],['J3','SO-2250',10,60]],M2:[['J4','SO-2231',5,20],['J5','SO-2260',12,70]],M3:[['J6','SO-2231',14,30],['J7','SO-2244',18,36],['J8','SO-2252',16,48],['J9','SO-2260',20,64]],M4:[['J10','SO-2250',12,40],['J11','SO-2262',9,55]],M5:[['J12','SO-2252',10,50]],A1:[['J13','SO-2231',10,52],['J14','SO-2244',12,60]],A2:[['J15','SO-2260',8,80]],Q1:[['J16','SO-2231',3,60]]};
+const mkPlan=()=>{const p={};MAC0.forEach(m=>p[m[0]]=JOB0[m[0]].map(j=>({id:j[0],o:j[1],h:j[2],due:j[3]})));return p};
+let PLAN=mkPlan(),BASE=JSON.stringify(PLAN);
+const MAC=Object.fromEntries(MAC0.map(m=>[m[0],{id:m[0],n:m[1],g:m[2],st:m[3],eff:m[4]}]));
+function fin(mid){let t=0;return PLAN[mid].map(j=>{t+=j.h/MAC[mid].eff;return{j,f:t,late:t>j.due}})}
+function metrics(){let late=0,total=0,mk=0;MAC0.forEach(m=>fin(m[0]).forEach(x=>{total++;if(x.late)late++;mk=Math.max(mk,x.f)}));return{late,total,mk,otif:Math.round((1-late/total)*100)}}
+
+/* policies */
+const r2=rng(5);
+const POL=[
+{id:'approval.po',n:'PO approval',v:14,txt:'policy approval.po v14   // four-eyes: finance\nwhen  doc.kind == "PO" && doc.amount > 25000\nthen  require approver(level >= 2)\n      sla 4h',data:Array.from({length:400},()=>Math.round(Math.exp(7.2+4.6*r2()))),unit:'PO',cmp:'>',pub:25000,lab:'POs needing L2 approval',delay:5.2,money:true},
+{id:'credit.hold',n:'Credit hold',v:6,txt:'policy credit.hold v6\nwhen  invoice.overdue_days > 14 && customer.tier != "A"\nthen  hold(shipments)\n      notify(controller)',data:Array.from({length:300},()=>Math.round(r2()*r2()*75)),unit:'invoices',cmp:'>',pub:14,lab:'invoices triggering a hold',delay:0,money:false},
+{id:'price.floor',n:'Price floor',v:9,txt:'policy price.floor v9\nwhen  line.margin_pct < 18\nthen  block(quote) unless approver(role == "sales_lead")',data:Array.from({length:500},()=>Math.round((8+r2()*38)*10)/10),unit:'quote lines',cmp:'<',pub:18,lab:'quote lines blocked',delay:0,money:false}];
+POL.forEach(p=>{p.state='published';p.sim=null;p.cur=p.txt});
+
+/* ======================= shell ======================= */
+function buildRail(){const R=ROLES[S.role];$('#rail').innerHTML=`<svg class="logo" viewBox="0 0 40 40"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="oklch(.84 .12 285)"/><stop offset="1" stop-color="oklch(.7 .17 200)"/></linearGradient></defs><rect width="40" height="40" rx="11" fill="url(#lg)"/><path d="M8 11l6 18 6-12 6 12 6-18" fill="none" stroke="#12101f" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`+VIEWS.map((v,i)=>`<button class="rb ${S.view===v[0]?'on':''} ${R.rec.includes(v[0])?'rec':''}" data-v="${v[0]}" aria-label="${v[1]}"><svg viewBox="0 0 24 24">${IC[v[0]]}</svg><span class="tip">${v[1]} <span class="dim">${(i+1)%10}</span></span></button>`).join('');$$('.rb',$('#rail')).forEach(b=>b.onclick=()=>go(b.dataset.v))}
+function go(id,opts){S.view=id;clearInterval(S.timer);if(opts)Object.assign(S,opts);location.hash=id;buildRail();const v=VIEWS.find(x=>x[0]===id);$('#crumb').innerHTML=`${v[1]}<small>${v[2]}</small>`;const m=$('#main');m.classList.remove('in');void m.offsetWidth;m.classList.add('in');m.classList.toggle('ro',S.t<0);m.scrollTop=0;VR[id](m)}
+const rerender=()=>{const m=$('#main'),y=m.scrollTop;m.classList.toggle('ro',S.t<0);VR[S.view](m);m.scrollTop=y};
+function banner(){if(S.t>=0)return'';return`<div class="banner">⏱ <span>Viewing the company as of <b>${fDW(dOf(S.t))}</b> · recorded-time · read-only</span><button class="btn sp" onclick="setT(0)">Return to now</button></div>`}
+function setT(v){S.t=+v;$('#scrub').value=S.t;scrubL();rerender()}
+function scrubL(){$('#scrubl').innerHTML=S.t===0?'<b>Now</b> · '+fDW(dOf(0)):'<b>'+fDW(dOf(S.t))+'</b> · '+(-S.t)+' d ago'}
+$('#scrub').oninput=e=>setT(e.target.value);$('#now').onclick=()=>setT(0);
+
+/* side card */
+function openCard(c){S.cards.push(c);drawCard();$('#side').classList.add('open')}
+function drawCard(){const c=S.cards[S.cards.length-1];if(!c)return $('#side').classList.remove('open');$('#stitle').textContent=c.title;$('#ssub').textContent=c.sub||'';$('#sbody').innerHTML=c.html;$('#back').style.display=S.cards.length>1?'':'none';c.bind&&c.bind($('#sbody'))}
+$('#sclose').onclick=()=>{S.cards=[];drawCard()};$('#back').onclick=()=>{S.cards.pop();drawCard()};
+function whyCard(k){const strs=[['SO-2231','so2231',3],['SO-2244','so2231',2],['SO-2262','so2231',1]];openCard({title:'Why '+fv(k,kv(k)),sub:k.n,html:`<p class="mut" style="margin-top:0">Every figure is a projection. Follow the thread:</p><div class="lineage"><div class="ln"><b>Definition</b><div class="mut">${k.f}</div></div><div class="ln"><b>Policy</b><div><span class="badge b-acc">${k.pol}</span> <span class="dim">signed · effective 01 Oct</span></div></div><div class="ln"><b>Source events</b><div class="mut">${fmt(2000+k.seed*173)} events · seq 478,${k.seed}10 → 482,19${k.seed%10} · valid-time ≤ ${fDW(dOf(S.t))}</div></div><div class="ln"><b>Biggest contributing Strands</b>${strs.map(s=>`<div><a href="#" data-s="${s[1]}" style="color:var(--acc2)">${s[0]}</a> <span class="dim">· ${s[2]*12+k.seed}% of movement</span></div>`).join('')}</div><div class="ln"><b>Integrity</b><div class="mut">Hash chain verified at 06:00 · anchor <span class="mono">${fnv('anchor'+k.id)}</span></div></div></div><button class="btn" style="margin-top:6px" id="open-led">Open in Ledger Studio</button>`,bind:b=>{$$('a[data-s]',b).forEach(a=>a.onclick=e=>{e.preventDefault();go('strand',{strand:a.dataset.s,hl:new Set()})});$('#open-led',b).onclick=()=>go('ledger')}})}
+
+/* ======================= VIEWS ======================= */
+const VR={};
+/* ---- Pulse ---- */
+VR.pulse=el=>{const R=ROLES[S.role];let items=PUL.filter(p=>p.day<=S.t&&(S.allRoles||p.roles.includes(S.role)));const open=items.filter(p=>!S.resolved.has(p.id)).length,hidden=PUL.filter(p=>p.day<=S.t&&!p.roles.includes(S.role)).length;
+const cashW=[180,95,-40,210,-182,120,160,40,-60,230,140,90,200],mx=260;
+el.innerHTML=banner()+`<h1>${S.t<0?'That day, ':'Good morning · '}${open} ${open===1?'promise needs':'promises need'} you</h1><p class="sub">${R.n} workspace · ranked by what the company has promised and what could break it.</p>
+<div class="grid g6" id="kp">${KP.map(k=>{const v=kv(k),p=k.s[Math.max(0,28+S.t-6)],d=v-p,good=(d>=0)===!!k.up;return`<button class="kpi" data-k="${k.id}"><span class="why">why?</span><div class="kl">${k.n}</div><div class="kvv num">${fv(k,v)}</div><div class="kd ${good?'up':'dn'} num">${d>=0?'▲':'▼'} ${k.u==='%'?Math.abs(d).toFixed(1)+' pt':eur(Math.abs(d)*1000)} <span class="dim">vs 7 d</span></div>${spark(k)}</button>`}).join('')}</div>
+<div class="grid g2" style="margin-top:var(--gap)">
+<div class="card"><h3>Needs attention <span class="r">${hidden&&!S.allRoles?`<a href="#" id="allr" style="color:var(--acc2)">+${hidden} for other roles</a>`:S.allRoles?'<a href="#" id="allr" style="color:var(--acc2)">only my role</a>':''}</span></h3>
+${items.length?items.map(p=>{const dn=S.resolved.has(p.id);return`<div class="item ${dn?'done':''}" data-id="${p.id}"><i class="sev ${p.sev}"></i><div><div class="it-t">${p.t}</div><div class="it-s">${p.sub}</div><div class="acts">${dn?'<span class="badge b-ok">✓ resolved · command emitted</span>':p.acts.map((a,i)=>`<button class="btn ${i?'':'pri'}" data-a="${i}" title="${a[1]}">${a[0]}</button>`).join('')}<button class="btn" data-w="1">Why</button></div></div><div style="text-align:right"><div class="dim" style="font-size:.78em">risk</div><div class="meter"><i style="width:${p.risk}%;background:${p.risk>65?'var(--bad)':p.risk>45?'var(--warn)':'var(--ok)'}"></i></div><div class="num" style="font-size:.85em;margin-top:3px">${p.risk}% · ${p.at}</div></div></div>`}).join(''):'<p class="mut">Nothing was open at that time.</p>'}</div>
+<div class="grid" style="align-content:start"><div class="card"><h3>Net cash · 13 weeks <span class="r dim">forecast</span></h3><svg viewBox="0 0 400 150" width="100%">${cashW.map((v,i)=>{const x=10+i*30,h=Math.abs(v)/mx*55;return`<rect x="${x}" y="${v>=0?70-h:70}" width="22" height="${h}" rx="4" fill="${v<0?'var(--bad)':'var(--acc)'}" opacity="${i<1?1:.62}"><title>Wk ${46+i}: ${v>0?'+':''}${v}k</title></rect><text class="lbl" x="${x+11}" y="145" text-anchor="middle">${46+i}</text>`}).join('')}<line class="axis" x1="0" x2="400" y1="70" y2="70"/><text class="lbl" x="${10+4*30+11}" y="${70+182/mx*55+14}" text-anchor="middle" style="fill:var(--bad)!important">−182k</text></svg><button class="btn" id="tosc">Fork this in Scenario Room →</button></div>
+<div class="card"><h3>Suggested surfaces</h3>${R.rec.map(r=>{const v=VIEWS.find(x=>x[0]===r);return`<div class="row" style="padding:7px 0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${IC[r]}</svg><div><b>${v[1]}</b><div class="dim" style="font-size:.85em">${v[2]}</div></div><button class="btn sp" data-g="${r}">Open</button></div>`}).join('')}</div></div></div>`;
+$$('.kpi',el).forEach(b=>b.onclick=()=>whyCard(KP.find(k=>k.id===b.dataset.k)));
+$$('.item',el).forEach(it=>{const p=PUL.find(x=>x.id===it.dataset.id);$$('[data-a]',it).forEach(b=>b.onclick=()=>{const a=p.acts[+b.dataset.a];if(a[0].startsWith('Open')){go('scenario');return}if(a[0].includes('trace')){go('strand',{strand:'lot7781',trace:'fwd',hl:new Set()});return}S.resolved.add(p.id);rerender();toast(`<b>${a[0]}</b> · 1 command emitted (seq ${fmt(482193+S.resolved.size)})`,()=>{S.resolved.delete(p.id);rerender()})});$('[data-w]',it).onclick=()=>openCard({title:'Why is this flagged?',sub:p.id.toUpperCase(),html:`<div class="lineage"><div class="ln"><b>Signal</b><div class="mut">${p.sub}</div></div><div class="ln"><b>Commitment graph</b><div class="mut">${p.t.split('—')[0].trim()} ← depends on 2 upstream commitments, 1 below confidence threshold.</div></div><div class="ln"><b>Model</b><div class="mut">Promise engine v3: capacity × supplier history × lead-time distribution. Risk ${p.risk}% (band ±7).</div></div><div class="ln"><b>Options</b>${p.acts.map(a=>`<div>• <b>${a[0]}</b> <span class="dim">${a[1]}</span></div>`).join('')}</div></div>${p.strand?'<button class="btn" id="ps">Open Strand</button>':''}`,bind:b=>{const x=$('#ps',b);x&&(x.onclick=()=>go('strand',{strand:p.strand,hl:new Set()}))}})});
+const ar=$('#allr',el);ar&&(ar.onclick=e=>{e.preventDefault();S.allRoles=!S.allRoles;rerender()});
+$('#tosc',el).onclick=()=>go('scenario');$$('[data-g]',el).forEach(b=>b.onclick=()=>go(b.dataset.g))};
+
+/* ---- Strand ---- */
+VR.strand=el=>{const st=STR[S.strand],W=1200,H=380,NW=122,NH=48,LY=[78,190,302],nx=n=>30+n[2]*(W-60-NW),nodes=Object.fromEntries(st.nodes.map(n=>[n[0],n]));
+const dim=S.hl.size>0;
+const path=(a,b)=>{const x1=nx(a)+NW,y1=LY[a[1]]+NH/2,x2=nx(b),y2=LY[b[1]]+NH/2;if(x2<x1){return`M${nx(a)+NW/2} ${y1+(b[1]>a[1]?NH/2:-NH/2)} C${nx(a)+NW/2} ${(y1+y2)/2} ${nx(b)+NW/2} ${(y1+y2)/2} ${nx(b)+NW/2} ${y2+(b[1]>a[1]?-NH/2:NH/2)}`}const m=(x1+x2)/2;return`M${x1} ${y1} C${m} ${y1} ${m} ${y2} ${x2} ${y2}`};
+el.innerHTML=banner()+`<h1>Strand View</h1><p class="sub">One business thread as a timeline: commitments (promises), events (facts) and money, joined by fulfilments. Click any node to ${S.trace==='fwd'?'trace everything it touched':'trace everything it came from'}.</p>
+<div class="row wrap" style="margin-bottom:var(--gap)"><div class="seg" id="sp">${Object.entries(STR).map(([k,v])=>`<button data-s="${k}" class="${k===S.strand?'on':''}">${v.name}</button>`).join('')}</div><div class="seg" id="tr"><button data-m="back" class="${S.trace==='back'?'on':''}">◀ Trace back (provenance)</button><button data-m="fwd" class="${S.trace==='fwd'?'on':''}">Trace forward (recall) ▶</button></div><button class="btn" id="rep">▶ Replay</button><button class="btn" id="clr">Clear</button></div>
+<div class="card" style="padding:8px;overflow:auto"><svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:900px" class="${dim?'dim-all':''}" id="ssv">
+${['COMMITMENTS · promises','EVENTS · facts','MONEY'].map((t,i)=>`<rect x="0" y="${LY[i]-20}" width="${W}" height="${NH+40}" rx="14" fill="var(--bg2)" opacity=".7"/><text class="lbl" x="14" y="${LY[i]-6}" style="letter-spacing:.1em">${t}</text>`).join('')}
+${st.links.map(l=>{const a=nodes[l[0]],b=nodes[l[1]],on=S.hl.has(l[0])&&S.hl.has(l[1]);return`<path class="lk ${l[2]||''} ${on?'on':''}" data-a="${l[0]}" data-b="${l[1]}" d="${path(a,b)}"/>`}).join('')}
+${st.nodes.map(n=>{const x=nx(n),y=LY[n[1]],dv=n[6];return`<g class="nd ${n[5]==='future'?'future':''} ${dv?'dev':''} ${S.hl.has(n[0])?'on':''}" data-n="${n[0]}" transform="translate(${x} ${y})"><rect width="${NW}" height="${NH}"/><text x="10" y="20" font-size="12" font-weight="600">${n[3]}</text><text class="lbl" x="10" y="37">${fD(dOf(n[4]))}${n[5]==='future'?' · forecast':''}</text>${dv?`<circle cx="${NW-10}" cy="10" r="5" fill="var(--warn)"/>`:''}</g>`}).join('')}
+<circle id="dot" r="6" fill="var(--acc)" cx="-20" cy="-20" opacity="0"/></svg></div>
+<div class="grid g3" style="margin-top:var(--gap)"><div class="card"><h3>Reading a Strand</h3><div class="mut">Solid lines are causation. <span style="color:var(--acc2)">Dashed violet</span> lines are fulfilments: an event that discharges part of a promise. Amber dots mark deviations the kernel detected.</div></div><div class="card"><h3>Why it replaces ten screens</h3><div class="mut">Quote, order, purchase, receipt, work order, shipment, invoice and cash all live in this one causal chain. Lot recall is the same chain walked forwards.</div></div><div class="card"><h3>Current selection</h3><div id="selinfo" class="mut">${S.hl.size?`${S.hl.size} nodes in the ${S.trace==='fwd'?'forward':'backward'} trace.`:'Nothing selected.'}</div></div></div>`;
+const walk=(id,fwd)=>{const seen=new Set([id]),q=[id];while(q.length){const c=q.shift();st.links.forEach(l=>{const a=fwd?l[0]:l[1],b=fwd?l[1]:l[0];if(a===c&&!seen.has(b)){seen.add(b);q.push(b)}})}return seen};
+$$('#sp button',el).forEach(b=>b.onclick=()=>{S.strand=b.dataset.s;S.hl=new Set();rerender()});$$('#tr button',el).forEach(b=>b.onclick=()=>{S.trace=b.dataset.m;S.hl=new Set();rerender()});$('#clr',el).onclick=()=>{S.hl=new Set();rerender()};
+$$('.nd',el).forEach(g=>g.onclick=()=>{const n=nodes[g.dataset.n];S.hl=walk(n[0],S.trace==='fwd');const i=st.nodes.indexOf(n);rerender();const seq=482000+i*7;openCard({title:n[3],sub:fD(dOf(n[4])),html:`<div class="row wrap"><span class="badge ${n[5]==='event'?'b-ok':n[5]==='future'?'b-n':'b-acc'}">${n[5]}</span>${n[6]?`<span class="badge b-warn">deviation</span>`:''}<span class="badge b-n">${S.hl.size-1} ${S.trace==='fwd'?'downstream':'upstream'}</span></div>${n[6]?`<p class="mut">⚠ ${n[6]}</p>`:''}<div class="dim" style="margin-top:10px">Payload</div><pre class="json">${esc(JSON.stringify({seq,kind:n[5]==='event'?'ledger.event':'commitment',strand:st.name.split(' ·')[0],valid_at:dOf(n[4]).toISOString().slice(0,10),recorded_at:dOf(Math.min(0,n[4])).toISOString().slice(0,10),actor:'usr_planner_04',hash:fnv(n[0]+seq)},null,1))}</pre><div class="mut">${S.trace==='fwd'?'Highlighted: everything this fact influenced — the recall set.':'Highlighted: everything this fact depends on — its provenance.'}</div>`})});
+$('#rep',el).onclick=()=>{const dot=$('#dot',el);dot.setAttribute('opacity',1);const seq=[...st.nodes].sort((a,b)=>a[4]-b[4]);S.hl=new Set();let i=0;const step=()=>{if(i>=seq.length){dot.setAttribute('opacity',0);return}const n=seq[i++];dot.setAttribute('cx',nx(n)+NW/2);dot.setAttribute('cy',LY[n[1]]+NH/2);$(`.nd[data-n="${n[0]}"]`,el)?.classList.add('on');setTimeout(step,420)};$$('.nd',el).forEach(g=>g.classList.remove('on'));step()}};
+
+/* ---- Flow ---- */
+VR.flow=el=>{const N=[['acme',0,'ACME Steel'],['boreal',0,'Boreal Polymers'],['oth',0,'Other suppliers'],['inb',1,'Inbound'],['stock',2,'Stock'],['qc',2,'QC hold'],['wip',3,'WIP'],['ship',4,'Shipped'],['scrap',4,'Scrap'],['ar',5,'Receivable'],['bank',6,'Bank'],['od',6,'Overdue']];
+const L=[['acme','inb',420,'mat'],['boreal','inb',260,'mat'],['oth','inb',180,'mat'],['inb','stock',800,'mat'],['inb','qc',60,'mat',1],['stock','wip',620,'mat'],['stock','ship',150,'mat'],['wip','ship',590,'mat'],['wip','scrap',30,'mat',1],['ship','ar',1020,'cash'],['ar','bank',940,'cash'],['ar','od',80,'cash',1]];
+const W=1200,H=470,NW=16,sc=.34,gap=22,nd={};
+const cols=[...Array(7)].map(()=>[]);N.forEach(n=>{const i=L.filter(l=>l[1]===n[0]).reduce((a,l)=>a+l[2],0),o=L.filter(l=>l[0]===n[0]).reduce((a,l)=>a+l[2],0);const o2={id:n[0],c:n[1],name:n[2],v:Math.max(i,o),h:Math.max(i,o)*sc,io:0,oo:0};nd[n[0]]=o2;cols[n[1]].push(o2)});
+cols.forEach((c,ci)=>{const tot=c.reduce((a,n)=>a+n.h,0)+gap*(c.length-1);let y=(H-tot)/2;c.forEach(n=>{n.y=y;n.x=30+ci*(W-60-NW)/6;y+=n.h+gap})});
+const paths=L.map(l=>{const a=nd[l[0]],b=nd[l[1]],w=l[2]*sc,y1=a.y+a.oo+w/2,y2=b.y+b.io+w/2;a.oo+=w;b.io+=w;const x1=a.x+NW,x2=b.x,m=(x1+x2)/2;return{d:`M${x1} ${y1} C${m} ${y1} ${m} ${y2} ${x2} ${y2}`,w,l,a,b}});
+const modes=[['all','All'],['mat','Material'],['cash','Cash'],['risk','Risk']];S.fm=S.fm||'all';
+el.innerHTML=banner()+`<h1>Flow Map</h1><p class="sub">Suppliers to bank, one picture. Material and cash share the same Strands, so finance and operations see the same business. Values are € thousand per week.</p>
+<div class="row wrap" style="margin-bottom:var(--gap)"><div class="seg" id="fm">${modes.map(m=>`<button data-m="${m[0]}" class="${S.fm===m[0]?'on':''}">${m[1]}</button>`).join('')}</div><span class="chip"><i class="sev bad" style="width:8px;height:8px;margin:0"></i> Bottleneck: WIP queue at M3 (+2.4 d)</span></div>
+<div class="card" style="padding:8px;overflow:auto;position:relative"><svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:900px" data-mode="${S.fm}" id="fsv">
+${['SUPPLY','RECEIVE','STORE','MAKE','SHIP','BILL','CASH'].map((t,i)=>`<text class="lbl" x="${30+i*(W-60-NW)/6+NW/2}" y="18" text-anchor="middle" style="letter-spacing:.12em">${t}</text>`).join('')}
+${paths.map((p,i)=>`<path class="fl" data-i="${i}" data-k="${p.l[3]}" data-r="${p.l[4]||0}" d="${p.d}" stroke="${p.l[4]?'var(--bad)':p.l[3]==='cash'?'var(--ok)':'var(--acc)'}" stroke-width="${Math.max(2,p.w)}" fill="none"/>`).join('')}
+${paths.map(p=>`<path class="part" d="${p.d}" style="animation-duration:${(3.6-p.w/90).toFixed(1)}s"/>`).join('')}
+${Object.values(nd).map(n=>`<g class="fnode ${n.id==='wip'?'hot':''}" data-n="${n.id}"><rect x="${n.x}" y="${n.y}" width="${NW}" height="${Math.max(6,n.h)}" rx="5" fill="${n.id==='wip'?'var(--bad)':n.c>=5?'var(--ok)':'var(--acc2)'}"/><text x="${n.c>=5||n.c===6?n.x-8:n.x+NW+8}" y="${n.y+Math.max(6,n.h)/2-2}" text-anchor="${n.c>=5?'end':'start'}" font-size="12" font-weight="600">${n.name}</text><text class="lbl" x="${n.c>=5?n.x-8:n.x+NW+8}" y="${n.y+Math.max(6,n.h)/2+12}" text-anchor="${n.c>=5?'end':'start'}">€${fmt(n.v)}k</text></g>`).join('')}</svg><div id="ftip" class="card" style="position:absolute;display:none;padding:8px 12px;pointer-events:none;z-index:5"></div></div>`;
+$$('#fm button',el).forEach(b=>b.onclick=()=>{S.fm=b.dataset.m;$('#fsv',el).dataset.mode=S.fm;$$('#fm button',el).forEach(x=>x.classList.toggle('on',x===b))});
+const tip=$('#ftip',el),card=tip.parentElement;
+$$('.fl',el).forEach(p=>{const q=paths[+p.dataset.i];p.onmousemove=e=>{const r=card.getBoundingClientRect();tip.style.display='block';tip.style.left=e.clientX-r.left+14+'px';tip.style.top=e.clientY-r.top+14+'px';tip.innerHTML=`<b>${q.a.name} → ${q.b.name}</b><div class="num">€${fmt(q.l[2])}k / week</div><div class="dim">${q.l[4]?'⚠ leakage band':'healthy'}</div>`};p.onmouseleave=()=>tip.style.display='none'});
+$$('.fnode',el).forEach(g=>g.onclick=()=>{const n=nd[g.dataset.n];openCard({title:n.name,sub:'€'+fmt(n.v)+'k / week',html:`<p class="mut" style="margin-top:0">${n.id==='wip'?'Queue at CNC M3 is stretching WIP. Solver suggests re-routing 3 jobs to M5.':'Top Strands moving through this band:'}</p>${['SO-2231','SO-2244','SO-2262'].map((s,i)=>`<div class="row" style="padding:6px 0;border-top:1px solid var(--line)"><b>${s}</b><span class="dim">${CUS[i]}</span><span class="sp num">€${fmt(n.v*(.34-i*.09))}k</span></div>`).join('')}<div class="row" style="margin-top:12px"><button class="btn pri" id="gf">Open Floor Twin</button><button class="btn" id="gs">Open Strand</button></div>`,bind:b=>{$('#gf',b).onclick=()=>go('floor');$('#gs',b).onclick=()=>go('strand',{strand:'so2231',hl:new Set()})}})})};
+
+/* ---- Floor ---- */
+let FD=null;
+VR.floor=el=>{const m=metrics(),b=(()=>{const p=PLAN;PLAN=JSON.parse(BASE);const x=metrics();PLAN=p;return x})();
+const diff=(a,b2,lowGood=true)=>{const d=b2-a;return d===0?'<span class="dim">no change</span>':`<span class="${(d<0)===lowGood?'up':'dn'}">${d>0?'+':''}${Math.round(d*10)/10}</span>`};
+el.innerHTML=banner()+`<h1>Floor Twin</h1><p class="sub">Drag any job between machines of the same cell. The solver re-checks every promise instantly and shows a ghost-plan diff before you commit.${S.t<0?' <b style="color:var(--warn)">Live view only — time travel does not apply to the shop floor.</b>':''}</p>
+<div class="tiles">${MAC0.map(x=>{const f=fin(x[0]),last=f.length?f[f.length-1].f:0,u=Math.min(100,Math.round(last/80*100));return`<div class="tile"><i class="st" style="background:${x[3]==='warn'?'var(--warn)':x[3]==='idle'?'var(--dim)':'var(--ok)'}"></i><div class="mono dim" style="font-size:11px">${x[0]}</div><b>${x[1]}</b><div class="meter" style="width:100%;margin-top:6px"><i style="width:${u}%;background:${u>85?'var(--bad)':'var(--acc)'}"></i></div><div class="dim num" style="font-size:11px;margin-top:3px">${u}% of 80 h${x[4]<1?' · derated 85%':''}</div></div>`}).join('')}</div>
+<div class="grid g2"><div class="card"><h3>Schedule · next 100 h <span class="r dim">drag blocks</span></h3><div id="lanes"></div></div>
+<div class="grid" style="align-content:start"><div class="card"><h3>Ghost-plan diff <span class="r dim">vs committed</span></h3><table><tbody><tr><td>Late jobs</td><td class="n num">${b.late} → <b>${m.late}</b></td><td class="n">${diff(b.late,m.late)}</td></tr><tr><td>Projected on-time</td><td class="n num">${b.otif}% → <b>${m.otif}%</b></td><td class="n">${diff(b.otif,m.otif,false)}</td></tr><tr><td>Plan finishes</td><td class="n num">${Math.round(b.mk)} h → <b>${Math.round(m.mk)} h</b></td><td class="n">${diff(Math.round(b.mk),Math.round(m.mk))}</td></tr></tbody></table><div class="row wrap" style="margin-top:12px"><button class="btn pri" id="solve">⚡ Auto-solve (EDD)</button><button class="btn" id="rr">Re-route M3 → M5</button><button class="btn" id="cm">Commit plan</button><button class="btn" id="rs">Reset</button></div></div>
+<div class="card"><h3>How it works</h3><div class="mut">The scheduler is a constraint solver over machines, tools, crews and calendars. Manual moves are validated against the same constraints. Nothing is written to the ledger until you commit: then one plan Commitment per job is emitted.</div></div></div></div>`;
+const lanes=$('#lanes',el),PX=9;
+lanes.innerHTML=MAC0.map(x=>`<div class="lane"><div><b>${x[0]}</b> <span class="dim" style="font-size:12px">${x[1]}</span></div><div class="track" data-m="${x[0]}" data-g="${x[2]}" style="width:${PX*100}px;max-width:100%">${fin(x[0]).map(f=>`<div class="job ${f.late?'late':''}" data-j="${f.j.id}" style="--c:${GC[x[2]]};width:${f.j.h/x[4]*PX}px" title="${f.j.o} · ${f.j.h} h · due ${f.j.due} h · finishes ${Math.round(f.f)} h${f.late?' · LATE':''}"><b>${f.j.o.slice(3)}</b><small>${f.j.h}h</small></div>`).join('')}</div></div>`).join('');
+$$('.job',lanes).forEach(jb=>jb.onpointerdown=e=>{if(S.t<0)return;e.preventDefault();const from=jb.parentElement.dataset.m,g=jb.parentElement.dataset.g,id=jb.dataset.j,r=jb.getBoundingClientRect(),gh=jb.cloneNode(true);gh.className='job ghost';gh.style.width=r.width+'px';gh.style.setProperty('--c',GC[g]);document.body.append(gh);jb.style.opacity=.3;const mv=ev=>{gh.style.left=ev.clientX-r.width/2+'px';gh.style.top=ev.clientY-23+'px';$$('.track',lanes).forEach(t=>{const rr=t.getBoundingClientRect(),inside=ev.clientY>=rr.top&&ev.clientY<=rr.bottom&&ev.clientX>=rr.left-10&&ev.clientX<=rr.right+10;t.classList.toggle('tgt',inside&&t.dataset.g===g);t.classList.toggle('bad',inside&&t.dataset.g!==g)})};mv(e);const up=ev=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);gh.remove();let tgt=null;$$('.track',lanes).forEach(t=>{const rr=t.getBoundingClientRect();if(ev.clientY>=rr.top&&ev.clientY<=rr.bottom)tgt=t});if(tgt&&tgt.dataset.g===g){const job=PLAN[from].find(j=>j.id===id);PLAN[from]=PLAN[from].filter(j=>j.id!==id);const to=tgt.dataset.m,bl=$$('.job',tgt).filter(x=>x.dataset.j!==id);let idx=0;bl.forEach(x=>{const q=x.getBoundingClientRect();if(q.left+q.width/2<ev.clientX)idx++});PLAN[to].splice(idx,0,job);toast(`Moved <b>${job.o}</b> ${from} → ${to}`)}else if(tgt)toast('Different cell: needs re-tooling, not allowed here');rerender()};document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up)});
+$('#solve',el).onclick=()=>{MAC0.forEach(x=>PLAN[x[0]].sort((a,b)=>a.due-b.due));rerender();toast('Solver sorted every lane by due date')};
+$('#rr',el).onclick=()=>{const mv=PLAN.M3.splice(2);PLAN.M5.push(...mv);rerender();toast(`Re-routed ${mv.length} jobs M3 → M5`)};
+$('#cm',el).onclick=()=>{BASE=JSON.stringify(PLAN);rerender();toast(`Plan committed · ${m.total} commitments emitted`)};$('#rs',el).onclick=()=>{PLAN=JSON.parse(BASE);rerender()}};
+
+/* ---- Promise ---- */
+VR.promise=el=>{const f=c=>S.pf==='all'||(S.pf==='risk'&&c.c<80)||(S.pf==='big'&&c.v>=60);
+el.innerHTML=banner()+`<h1>Promise Board</h1><p class="sub">Every commitment with an honest confidence band. Drag a card to another week to renegotiate: confidence and a draft message update immediately.</p>
+<div class="row wrap" style="margin-bottom:var(--gap)">${[['all','All promises'],['risk','At risk (<80%)'],['big','≥ €60k']].map(c=>`<button class="chip ${S.pf===c[0]?'on':''}" data-f="${c[0]}">${c[1]}</button>`).join('')}</div>
+<div class="cols5">${WK.map((w,i)=>{const cs=CM.filter(c=>c.wk===i&&f(c)),sum=cs.reduce((a,c)=>a+c.v,0),av=cs.length?Math.round(cs.reduce((a,c)=>a+c.c,0)/cs.length):0;return`<div class="col" data-w="${i}"><h4><b>${w}</b><span class="dim">${fD(dOf(i*7))}</span><span class="sp num dim">€${sum}k · ${av||'–'}%</span></h4>${cs.map(c=>{const sp=Math.round((100-c.c)/3);return`<div class="pc" draggable="true" data-id="${c.id}"><div class="row"><b class="mono" style="font-size:12px">${c.id}</b><span class="sp num">€${c.v}k</span></div><div class="mut" style="font-size:.9em">${c.p} · ${c.q}</div><div class="band"><i style="left:${clamp(c.c-sp,0,100)}%;width:${sp*2}%;background:${c.c<80?'var(--bad)':'var(--ok)'};opacity:.35"></i><i style="left:0;width:${c.c}%;background:${c.c<70?'var(--bad)':c.c<85?'var(--warn)':'var(--ok)'};height:3px;top:2px"></i></div><div class="row" style="font-size:.82em"><span class="num">${c.c}% confident</span><span class="sp dim">${c.why||'on track'}</span></div></div>`}).join('')||'<div class="dim" style="padding:20px 6px">Nothing here</div>'}</div>`}).join('')}</div>`;
+$$('[data-f]',el).forEach(b=>b.onclick=()=>{S.pf=b.dataset.f;rerender()});let dr=null;
+$$('.pc',el).forEach(c=>{c.ondragstart=e=>{dr=c.dataset.id;c.classList.add('drag');e.dataTransfer.setData('text/plain',dr)};c.ondragend=()=>c.classList.remove('drag');c.onclick=()=>{const x=CM.find(k=>k.id===c.dataset.id);openCard({title:x.id,sub:x.p,html:`<div class="row wrap"><span class="badge ${x.c<80?'b-bad':'b-ok'}">${x.c}% confident</span><span class="badge b-n">€${x.v}k</span></div><p class="mut">${x.why?'Risk driver: '+x.why+'.':'No risk drivers detected.'} Confidence comes from live capacity, supplier delivery history and lead-time distributions.</p><button class="btn" id="ss">View Strand</button>`,bind:b=>$('#ss',b).onclick=()=>go('strand',{strand:'so2231',hl:new Set()})})}});
+$$('.col',el).forEach(col=>{col.ondragover=e=>{e.preventDefault();col.classList.add('over')};col.ondragleave=()=>col.classList.remove('over');col.ondrop=e=>{e.preventDefault();col.classList.remove('over');const c=CM.find(k=>k.id===(dr||e.dataTransfer.getData('text/plain')));if(!c)return;const nw=+col.dataset.w,o=c.wk;if(nw===o)return;c.c=clamp(c.c+(nw-o)*9,20,99);c.wk=nw;rerender();toast(nw>o?`Draft sent to <b>${c.p}</b>: ${c.id} moves to ${WK[nw]}. Confidence ${c.c}%`:`Pulled in ${c.id} to ${WK[nw]}: confidence drops to ${c.c}%`)}})};
+
+/* ---- Ledger ---- */
+function projections(){const ev=evVis(),tb={},st={'Raw-WH':9000,'Line':0,'FG-WH':5000,'Shipped':0};Object.entries(OPEN).forEach(([a,v])=>tb[a]=v);ev.forEach(e=>{tb[e.dr]=(tb[e.dr]||0)+e.amt;tb[e.cr]=(tb[e.cr]||0)-e.amt;const u=e.units;if(e.kind==='po.received')st['Raw-WH']+=u;if(e.kind==='goods.issued'){st['Raw-WH']-=u;st.Line+=u}if(e.kind==='wo.completed'){st.Line-=u;st['FG-WH']+=u}if(e.kind==='goods.shipped'){st['FG-WH']-=u;st.Shipped+=u}});return{ev,tb,st}}
+VR.ledger=el=>{const P=projections(),kinds=['all',...new Set(EV.map(e=>e.kind))];let rows=[...P.ev].reverse().filter(e=>(S.lkind==='all'||e.kind===S.lkind)&&(!S.lq||(e.kind+e.strand+e.party+e.seq).toLowerCase().includes(S.lq.toLowerCase())));
+const tbRows=Object.keys(ACC).map(a=>[a,P.tb[a]||0]),dr=tbRows.reduce((s,r)=>s+(r[1]>0?r[1]:0),0),cr=tbRows.reduce((s,r)=>s+(r[1]<0?-r[1]:0),0);
+el.innerHTML=banner()+`<h1>Ledger Studio</h1><p class="sub">The one source of truth. Events are immutable and hash-chained; stock and GL below are <b>projections</b> of the same stream, recomputed for the moment you chose.</p>
+<div class="tabs">${[['events','Events'],['stock','Stock projection'],['tb','Trial balance projection']].map(t=>`<button class="chip ${S.ltab===t[0]?'on':''}" data-t="${t[0]}">${t[1]}</button>`).join('')}<span class="sp"></span><span class="badge b-ok">✓ legs balanced · Σ debit = Σ credit = ${eur(dr)}</span></div>
+<div class="card" id="lbody"></div>`;
+const body=$('#lbody',el);
+if(S.ltab==='events'){body.innerHTML=`<div class="row wrap" style="margin-bottom:10px"><input class="in" id="lq" placeholder="Filter by kind, strand, party, seq…" value="${esc(S.lq)}" style="max-width:320px">${kinds.map(k=>`<button class="chip ${S.lkind===k?'on':''}" data-k="${k}">${k}</button>`).join('')}<button class="btn sp" id="ver">Verify hash chain</button></div><div style="max-height:56vh;overflow:auto"><table><thead><tr><th>Seq</th><th>Kind</th><th>Valid</th><th>Recorded</th><th>Strand</th><th>Dr / Cr</th><th class="n">Amount</th><th>Hash</th></tr></thead><tbody>${rows.slice(0,80).map(e=>`<tr class="clk" data-q="${e.seq}"><td class="mono">${e.seq}</td><td><span class="badge b-acc">${e.kind}</span>${e.restate?' <span class="badge b-warn">restatement</span>':''}</td><td>${fD(dOf(Math.round(e.day)))}</td><td>${fD(dOf(Math.round(e.rec)))}</td><td class="mono">${e.strand}</td><td class="dim">${ACC[e.dr]} / ${ACC[e.cr]}</td><td class="n num">${fmt(e.amt)}</td><td class="mono dim">${e.hash}</td></tr>`).join('')||'<tr><td colspan="8" class="dim">No events recorded yet at this time.</td></tr>'}</tbody></table></div>`;
+$('#lq',body).oninput=e=>{S.lq=e.target.value;const p=e.target.selectionStart;rerender();const n=$('#lq');n.focus();n.setSelectionRange(p,p)};$$('[data-k]',body).forEach(b=>b.onclick=()=>{S.lkind=b.dataset.k;rerender()});
+$('#ver',body).onclick=async e=>{const b=e.target;b.disabled=true;let ok=true,prev='00000000';for(let i=0;i<P.ev.length;i++){const x=P.ev[i];if(fnv(x.prev+x.seq+x.kind+x.amt+x.strand)!==x.hash)ok=false;if(i%6===0){b.textContent=`Verifying ${i+1}/${P.ev.length}…`;await new Promise(r=>setTimeout(r,25))}}b.disabled=false;b.textContent='Verify hash chain';toast(ok?`✓ Chain intact · ${P.ev.length} events · anchor ${P.ev.length?P.ev[P.ev.length-1].hash:'—'}`:'✗ Chain broken')};
+$$('tr[data-q]',body).forEach(tr=>tr.onclick=()=>{const e=EV.find(x=>x.seq==tr.dataset.q);openCard({title:e.kind,sub:'seq '+e.seq,html:`${e.restate?'<p class="b-warn badge" style="display:block;padding:8px">Restatement: recorded '+Math.round(e.rec-e.day)+' days after valid time. Posted to the open period, original untouched.</p>':''}<div class="dim">Legs (value axis)</div><table><thead><tr><th>Account</th><th class="n">Dr</th><th class="n">Cr</th></tr></thead><tbody><tr><td>${e.dr} ${ACC[e.dr]}</td><td class="n num">${fmt(e.amt)}</td><td></td></tr><tr><td>${e.cr} ${ACC[e.cr]}</td><td></td><td class="n num">${fmt(e.amt)}</td></tr></tbody></table><div class="badge b-ok" style="margin:8px 0">✓ Σ = 0 · deferred constraint satisfied</div>${e.flow?`<div class="dim">Legs (quantity axis)</div><div>${e.flow} · ${fmt(e.units)} units</div>`:''}<div class="dim" style="margin-top:10px">Chain</div><div class="mono" style="font-size:12px">prev ${e.prev}<br>this <b>${e.hash}</b></div><pre class="json">${esc(JSON.stringify({event_id:'ev_'+fnv(e.hash),strand:e.strand,party:e.party,valid_at:dOf(Math.round(e.day)).toISOString().slice(0,10),actor:'svc_projector'},null,1))}</pre><button class="btn" id="gs">View Strand</button>`,bind:b=>$('#gs',b).onclick=()=>go('strand',{strand:'so2231',hl:new Set()})})})}
+else if(S.ltab==='stock'){body.innerHTML=`<p class="mut" style="margin-top:0">Stock is not stored; it is the running sum of quantity legs per Place. Move the time dock and watch it recompute.</p><table><thead><tr><th>Place</th><th>Role</th><th class="n">Units</th><th>Level</th></tr></thead><tbody>${Object.entries(P.st).map(([k,v])=>`<tr><td><b>${k}</b></td><td class="dim">${{'Raw-WH':'Raw material','Line':'Work in progress','FG-WH':'Finished goods','Shipped':'Cumulative shipped'}[k]}</td><td class="n num">${fmt(v)}</td><td style="width:40%"><div class="meter" style="width:100%"><i style="width:${clamp(v/200,2,100)}%;background:var(--acc)"></i></div></td></tr>`).join('')}</tbody></table>`}
+else{body.innerHTML=`<p class="mut" style="margin-top:0">General ledger as a projection through posting policy <span class="badge b-acc">post.map v9</span>.</p><table><thead><tr><th>Account</th><th class="n">Debit</th><th class="n">Credit</th></tr></thead><tbody>${tbRows.map(r=>`<tr><td>${r[0]} · ${ACC[r[0]]}</td><td class="n num">${r[1]>0?fmt(r[1]):''}</td><td class="n num">${r[1]<0?fmt(-r[1]):''}</td></tr>`).join('')}<tr><td><b>Total</b></td><td class="n num"><b>${fmt(dr)}</b></td><td class="n num"><b>${fmt(cr)}</b></td></tr></tbody></table><div class="badge ${dr===cr?'b-ok':'b-bad'}" style="margin-top:10px">${dr===cr?'✓ Balanced by construction':'✗ Imbalance'}</div>`}
+$$('[data-t]',el).forEach(b=>b.onclick=()=>{S.ltab=b.dataset.t;rerender()})};
+
+/* ---- Policy ---- */
+const hl=t=>esc(t).replace(/(\/\/.*)/g,'<span class="k4">$1</span>').replace(/\b(policy|when|then|unless|require|hold|block|notify|sla|approver)\b/g,'<span class="k1">$1</span>').replace(/(&quot;[^&]*?&quot;)/g,'<span class="k3">$1</span>').replace(/(\b\d[\d_.]*h?\b)/g,'<span class="k2">$1</span>');
+const thr=p=>{const m=p.cur.match(/(>|<)\s*([\d_.]+)/);return m?+m[2].replace(/_/g,''):null};
+function simulate(p){const t=thr(p),f=(x,k)=>p.cmp==='>'?x>k:x<k;const a=p.data.filter(x=>f(x,p.pub)).length,b=p.data.filter(x=>f(x,t)).length;const bins=Array(14).fill(0);p.data.forEach(x=>{if(f(x,t)!==f(x,p.pub)){const i=Math.min(13,Math.floor(p.data.indexOf(x)/p.data.length*14));bins[i]++}});return{a,b,t,changed:p.data.filter(x=>f(x,t)!==f(x,p.pub)).length,bins,hrs:Math.round((b-a)*p.delay)}}
+VR.policy=el=>{const p=POL[S.polSel],sim=p.sim;
+el.innerHTML=banner()+`<h1>Policy Lab</h1><p class="sub">Business rules are versioned data. Edit one, replay it against the last 90 days, review the diff, then request publication under four-eyes control.</p>
+<div class="grid" style="grid-template-columns:230px minmax(0,1fr) minmax(0,1fr)"><div class="card"><h3>Policies</h3>${POL.map((q,i)=>`<button class="btn" data-i="${i}" style="display:block;width:100%;text-align:left;margin-bottom:6px;${i===S.polSel?'border-color:var(--acc);background:var(--accbg)':''}"><b>${q.n}</b><div class="dim" style="font-size:11px">v${q.v} · ${q.state}</div></button>`).join('')}</div>
+<div class="card"><h3>Editor <span class="r"><span class="badge ${p.state==='published'?'b-ok':p.state==='pending'?'b-warn':'b-acc'}">${p.state}</span></span></h3><div class="ed"><pre id="hl">${hl(p.cur)}\n</pre><textarea id="ta" spellcheck="false">${esc(p.cur)}</textarea></div><div class="row wrap" style="margin-top:12px"><button class="btn pri" id="sim">▶ Simulate last 90 days</button><button class="btn" id="req" ${sim&&p.state==='draft'?'':'disabled'}>Request publish</button><button class="btn" id="apr" ${p.state==='pending'?'':'disabled'}>Approve as Controller</button><button class="btn sp" id="rv">Revert</button></div></div>
+<div class="card"><h3>Simulated diff</h3>${sim?`<div class="grid" style="grid-template-columns:1fr 1fr"><div><div class="dim" style="font-size:12px">Published (${fmt(p.pub)})</div><div class="kvv num">${sim.a}</div></div><div><div class="dim" style="font-size:12px">Candidate (${fmt(sim.t)})</div><div class="kvv num">${sim.b}</div></div></div><div class="mut">${p.lab} out of ${p.data.length} ${p.unit}s in the window.</div><div class="bars" style="margin:12px 0 4px">${sim.bins.map(b=>`<i style="height:${b/Math.max(1,...sim.bins)*100}%"></i>`).join('')}</div><div class="dim" style="font-size:11px">changed outcomes across 90 days</div><table style="margin-top:8px"><tbody><tr><td>Documents changing outcome</td><td class="n num"><b>${sim.changed}</b></td></tr>${p.delay?`<tr><td>Approval hours ${sim.b>sim.a?'added':'saved'}</td><td class="n num"><b>${Math.abs(sim.hrs)} h</b></td></tr>`:''}<tr><td>Risk class</td><td class="n"><span class="badge ${sim.changed>60?'b-bad':sim.changed>20?'b-warn':'b-ok'}">${sim.changed>60?'High':sim.changed>20?'Medium':'Low'}</span></td></tr></tbody></table>`:'<p class="mut">Run a simulation to see exactly what this change would have done. Try changing the number in the <span class="mono">when</span> clause.</p>'}</div></div>`;
+const ta=$('#ta',el),pre=$('#hl',el);ta.oninput=()=>{p.cur=ta.value;p.sim=null;p.state=p.cur===p.txt?'published':'draft';pre.innerHTML=hl(p.cur)+'\n';$('#sim',el).dataset.dirty=1};ta.onscroll=()=>{pre.scrollTop=ta.scrollTop};
+ta.onblur=()=>rerender();
+$$('[data-i]',el).forEach(b=>b.onclick=()=>{S.polSel=+b.dataset.i;rerender()});
+$('#sim',el).onclick=()=>{if(thr(p)==null)return toast('Could not find a threshold in the rule');p.cur=ta.value;p.sim=simulate(p);if(p.state==='published'&&p.cur!==p.txt)p.state='draft';rerender()};
+$('#req',el).onclick=()=>{p.state='pending';rerender();toast('Publication requested · waiting for a second approver (finance)')};
+$('#apr',el).onclick=()=>{p.v++;p.pub=thr(p);p.txt=p.cur=p.cur.replace(/v\d+/,'v'+p.v);p.state='published';p.sim=null;rerender();toast(`Policy <b>${p.id}</b> published as v${p.v} · signed · effective now`)};
+$('#rv',el).onclick=()=>{p.cur=p.txt;p.sim=null;p.state='published';rerender()}};
+
+/* ---- Scenario ---- */
+const SC=[{n:'Supplier ACME slips',u:'weeks',min:0,max:6,s:1},{n:'Price list increase',u:'%',min:0,max:8,s:.5},{n:'Machine M3 down',u:'days',min:0,max:14,s:1}];
+function model(i,x){const r=rng(9),W=13,base=[],sc=[];let cb=2410,cs=2410;let sl=94.2,gm=31.4,cap=83,slB=94.2,gmB=31.4,capB=83;
+for(let w=0;w<W;w++){const rev=760+Math.sin(w/2)*70+r()*40,cost=655+Math.cos(w/3)*40+r()*30;let rv=rev,cs2=cost;
+if(i===0&&w>=2&&w<9){const p=.35*Math.min(1,x/2);rv=rev*(1-p)+(w+x<W?0:0);cs2+=x*9}
+if(i===1&&w>=3){rv=rev*(1+x/100*(1-.55));cs2=cost*(1-x/100*.18)}
+if(i===2&&w>=1&&w<1+Math.max(1,x/3)){rv=rev*(1-.18*Math.min(1,x/7));cs2+=x*7}
+cb+=rev-cost-(w===4?250:0);cs+=rv-cs2-(w===4?250:0);base.push(cb);sc.push(cs)}
+if(i===0){sl-=3.1*x;gm-=.4*x;cap-=0}if(i===1){gm+=x*.5;sl-=x*.12;cap-=x*.5}if(i===2){sl-=1.4*x/2;gm-=.15*x;cap+=x*.6}
+return{base,sc,sl,gm,cap,slB,gmB,capB}}
+VR.scenario=el=>{const sc=SC[S.scen],x=S.sp[S.scen],m=model(S.scen,x),all=[...m.base,...m.sc],mn=Math.min(...all)-100,mxv=Math.max(...all)+100,W=640,H=250,X=i=>34+i/12*(W-50),Y=v=>H-24-(v-mn)/(mxv-mn)*(H-44),line=a=>a.map((v,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1)).join(' '),lowB=Math.min(...m.base),lowS=Math.min(...m.sc);
+const tile=(l,a,b,u,lg)=>{const d=b-a;return`<div class="card"><div class="dim" style="font-size:.78em">${l}</div><div class="kvv num">${b.toFixed(u==='%'?1:0)}${u==='%'?'%':'k'}</div><div class="num ${Math.abs(d)<.05?'dim':(d>=0)===lg?'up':'dn'}">${d>=0?'+':''}${d.toFixed(u==='%'?1:0)}${u==='%'?' pt':'k'} vs base</div></div>`};
+el.innerHTML=banner()+`<h1>Scenario Room</h1><p class="sub">A scenario is a copy-on-write fork of the company at <span class="mono">seq 482,193</span>. Change the world, compare, then merge the useful commands or discard it. Production is never touched.</p>
+<div class="row wrap" style="margin-bottom:var(--gap)"><div class="seg" id="sc">${SC.map((s,i)=>`<button data-i="${i}" class="${i===S.scen?'on':''}">${s.n}</button>`).join('')}</div><span class="badge b-acc">fork · base_seq 482,193 · overlay ${Math.round(x*1.5)+2} events</span></div>
+<div class="grid g2"><div class="card"><h3>Cash trajectory · 13 weeks <span class="r"><span class="chip" style="border-color:var(--dim)">— base</span> <span class="chip on">— scenario</span></span></h3><svg viewBox="0 0 ${W} ${H}" width="100%"><line class="axis" x1="34" x2="${W-16}" y1="${Y(0)}" y2="${Y(0)}" stroke-dasharray="3 4"/><text class="lbl" x="4" y="${Y(0)+4}">0</text><path d="${line(m.base)} L${X(12)} ${Y(0)} L${X(0)} ${Y(0)}Z" fill="var(--dim)" opacity=".06"/><path d="${line(m.base)}" fill="none" stroke="var(--dim)" stroke-width="2" stroke-dasharray="5 4"/><path d="${line(m.sc)}" fill="none" stroke="var(--acc)" stroke-width="3" stroke-linecap="round"/>${m.sc.map((v,i)=>`<circle cx="${X(i)}" cy="${Y(v)}" r="3.4" fill="var(--acc)"/>`).join('')}${m.base.map((v,i)=>i%2?'':`<text class="lbl" x="${X(i)}" y="${H-6}" text-anchor="middle">wk ${46+i}</text>`).join('')}<text class="lbl" x="${X(m.sc.indexOf(lowS))}" y="${Y(lowS)+18}" text-anchor="middle" style="fill:var(--warn)!important">low ${eur(lowS*1000)}</text></svg>
+<div class="row" style="margin-top:6px"><b>${sc.n}</b><input type="range" id="sl" min="${sc.min}" max="${sc.max}" step="${sc.s}" value="${x}" style="flex:1;accent-color:var(--acc)"><b class="num">${x} ${sc.u}</b></div></div>
+<div class="grid" style="align-content:start;grid-template-columns:1fr 1fr">${tile('Cash low point',lowB,lowS,'k',true)}${tile('Service level',m.slB,m.sl,'%',true)}${tile('Gross margin',m.gmB,m.gm,'%',true)}${tile('Capacity load',m.capB,m.cap,'%',false)}</div></div>
+<div class="grid g2" style="margin-top:var(--gap)"><div class="card"><h3>Suggested mitigations <span class="r dim">solver-ranked</span></h3>${[['Expedite PO-8812','+€1.2k','recovers 62% of the dip'],['Qualify second steel source','€0','lead time 3 weeks'],['Pull forward AR collection (Helio, Kestrel)','€0','+€96k in wk 47'],['Defer AP run to Fri','€0','within terms, +€210k']].map(a=>`<div class="row" style="padding:7px 0;border-top:1px solid var(--line)"><div><b>${a[0]}</b><div class="dim" style="font-size:.85em">${a[2]}</div></div><span class="badge b-n sp">${a[1]}</span></div>`).join('')}</div>
+<div class="card"><h3>Decide</h3><p class="mut" style="margin-top:0">Merging replays the selected overlay commands against production with a conflict report. Discarding drops the fork.</p><div class="row wrap"><button class="btn pri act" id="mg">Merge 3 commands</button><button class="btn act" id="ds">Discard fork</button><button class="btn" id="sh">Share link</button></div></div></div>`;
+$$('#sc button',el).forEach(b=>b.onclick=()=>{S.scen=+b.dataset.i;rerender()});$('#sl',el).oninput=e=>{S.sp[S.scen]=+e.target.value;const y=$('#main').scrollTop;rerender();$('#main').scrollTop=y};
+$('#mg',el).onclick=()=>toast('Merged · 3 commands replayed · 0 conflicts · plan v57 created');$('#ds',el).onclick=()=>{S.sp=[0,0,0];rerender();toast('Fork discarded')};$('#sh',el).onclick=()=>toast('Read-only link copied (expires in 7 days)')};
+
+/* ---- Money ---- */
+const TASKS=[['Sub-ledgers reconciled to GL',1],['Goods-received-not-invoiced accrual',1],['FX revaluation (EUR/USD, EUR/GBP)',0],['Inventory re-valuation (weighted-average)',0],['3-way match exceptions cleared',0],['Intercompany netting',0],['Close period · Oct 2026',0]];
+const AGE=[['0–30',612,'var(--ok)'],['31–60',241,'var(--acc)'],['61–90',96,'var(--warn)'],['90+',48,'var(--bad)']];
+VR.money=el=>{const P=projections(),gl=(P.tb[1300]||0)+(P.tb[1350]||0)+(P.tb[1400]||0),sub=(P.st['Raw-WH']+P.st['FG-WH']+P.st.Line)*100,done=TASKS.filter(t=>t[1]).length;
+el.innerHTML=banner()+`<h1>Money</h1><p class="sub">Continuous close: the books are always nearly closed because they are projections of the same events as operations.</p>
+<div class="grid g2"><div class="card"><h3>October close <span class="r">${done}/${TASKS.length} tasks</span></h3><div class="row" style="align-items:flex-start;gap:24px"><div class="ring" id="rg" data-l="${Math.round(done/TASKS.length*100)}%" style="--p:${done/TASKS.length*100}"></div><div style="flex:1">${TASKS.map((t,i)=>`<div class="row" style="padding:6px 0;border-top:1px solid var(--line)"><span class="badge ${t[1]?'b-ok':'b-n'}" id="tb${i}">${t[1]?'✓ done':'todo'}</span><span class="${t[1]?'mut':''}">${t[0]}</span>${t[1]?'':`<button class="btn sp act" data-r="${i}">Run</button>`}</div>`).join('')}</div></div></div>
+<div class="grid" style="align-content:start"><div class="card"><h3>Books ↔ Flow reconciliation</h3><table><tbody><tr><td>GL inventory (1300+1350+1400)</td><td class="n num">${fmt(gl)}</td></tr><tr><td>Stock projection × cost</td><td class="n num">${fmt(sub)}</td></tr><tr><td><b>Difference</b></td><td class="n num"><b class="up">${fmt(gl-sub)}.00</b></td></tr></tbody></table><div class="badge ${gl===sub?'b-ok':'b-bad'}" style="margin-top:8px">${gl===sub?'✓ Reconciled by construction':'✗ Investigate'}</div></div>
+<div class="card"><h3>Receivables ageing</h3><div class="stack">${AGE.map(a=>`<i style="width:${a[1]/997*100}%;background:${a[2]}" title="${a[0]} d"></i>`).join('')}</div>${AGE.map(a=>`<div class="row" style="padding:3px 0"><i style="width:10px;height:10px;border-radius:3px;background:${a[2]}"></i>${a[0]} d<span class="sp num">€${a[1]}k</span></div>`).join('')}</div></div></div>
+<div class="card" style="margin-top:var(--gap)"><h3>3-way match exceptions <span class="r dim">PO · receipt · invoice</span></h3><table><thead><tr><th>Doc</th><th>Supplier</th><th class="n">Variance</th><th>Policy</th><th></th></tr></thead><tbody>${[['INV-5530','Nordwerk',4.2,'approval.match ≤ 2%'],['INV-5518','Boreal Polymers',1.1,'auto-accept'],['INV-5509','ACME Steel',6.8,'approval.match ≤ 2%'],['INV-5502','Tessa Bearings',0.4,'auto-accept']].map(r=>`<tr><td class="mono">${r[0]}</td><td>${r[1]}</td><td class="n num">${r[2]}%</td><td><span class="badge ${r[2]>2?'b-warn':'b-ok'}">${r[3]}</span></td><td class="n"><button class="btn act" data-x="${r[0]}">${r[2]>2?'Request credit note':'Accept'}</button></td></tr>`).join('')}</tbody></table></div>`;
+$$('[data-r]',el).forEach(b=>b.onclick=()=>{const i=+b.dataset.r;if(TASKS.slice(0,i).some(t=>!t[1]))return toast('Run earlier tasks first');b.disabled=true;b.textContent='Running…';let p=done/TASKS.length*100;const tg=(i+1)/TASKS.length*100;const iv=setInterval(()=>{p+=2;$('#rg',el)&&$('#rg',el).style.setProperty('--p',Math.min(p,tg));if(p>=tg){clearInterval(iv);TASKS[i][1]=1;if(S.view==='money')rerender();toast('✓ '+TASKS[i][0])}},30)});
+$$('[data-x]',el).forEach(b=>b.onclick=()=>{b.closest('tr').style.opacity=.4;b.disabled=true;toast(`${b.dataset.x}: correction event emitted`)})};
+
+/* ---- Spine ---- */
+VR.spine=el=>{const PR=[['inventory',12],['gl',18],['ar_ap',9],['wip_cost',31],['kpi',22],['search',44]];let seq=482193;
+el.innerHTML=banner()+`<h1>Spine</h1><p class="sub">The kernel: one append-only ledger, invariants enforced inside the database, and projectors that can be rebuilt from zero. This is what makes everything above trustworthy.</p>
+<div class="grid g2"><div class="card"><h3>Live ledger stream <span class="r"><span class="badge b-ok">● writing</span></span></h3><div class="ticker" id="tk"></div></div>
+<div class="grid" style="align-content:start"><div class="card"><h3>Projectors <span class="r dim">lag SLO &lt; 1 s</span></h3>${PR.map((p,i)=>`<div style="margin-bottom:9px"><div class="row" style="font-size:.9em"><b class="mono">${p[0]}</b><span class="sp num dim" id="lg${i}">${p[1]} ms</span><button class="btn" data-rb="${i}" style="padding:1px 8px;font-size:11px">rebuild</button></div><div class="gauge"><i id="gg${i}" style="width:${p[1]}%"></i></div></div>`).join('')}</div>
+<div class="card"><h3>Invariants enforced in-DB</h3>${[['Legs balance per axis','12,48'+'1,204 checks'],['Fulfilment ≤ commitment','2,310,562'],['Closed periods immutable','49 periods'],['Hash chain unbroken','seq 0 → '+fmt(seq)]].map(a=>`<div class="row" style="padding:5px 0;border-top:1px solid var(--line)"><span class="badge b-ok">✓</span>${a[0]}<span class="sp dim num">${a[1]}</span></div>`).join('')}</div></div></div>
+<div class="card" style="margin-top:var(--gap)"><h3>Architecture at a glance</h3><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">${[['Experience','Atelier · Floor PWA · Pocket · API'],['Edge','OIDC · RBAC+ABAC · SoD'],['Modules','Catalog Parties Order Flow Make Money People Assets Quality Insight'],['Ledger kernel','events · commitments · fulfilments'],['Projectors','inventory · GL · AR/AP · KPI'],['PostgreSQL','RLS · bitemporal · PITR']].map((a,i)=>`<div style="border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:10px;padding:10px;background:var(--bg2)"><b>${a[0]}</b><div class="dim" style="font-size:.85em">${a[1]}</div></div>`).join('')}</div></div>`;
+const tk=$('#tk',el),K=['goods.issued','po.received','invoice.posted','cash.received','wo.completed','goods.shipped'];let ph='a91c4e02';
+const add=()=>{const k=K[Math.floor(Math.random()*K.length)],a=Math.round(Math.random()*90+4)*100,h=fnv(ph+seq+k+a);const d=document.createElement('div');d.innerHTML=`<span class="dim">${new Date().toLocaleTimeString('en-GB')}</span> <span style="color:var(--acc2)">#${++seq}</span> ${k.padEnd(14)} <span class="num">${fmt(a)}</span> <span class="dim">${ph}→${h}</span>`;ph=h;tk.prepend(d);while(tk.children.length>14)tk.lastChild.remove();PR.forEach((p,i)=>{p[1]=clamp(p[1]+(Math.random()-.5)*8,4,70);const l=$('#lg'+i,el),g=$('#gg'+i,el);if(l){l.textContent=Math.round(p[1])+' ms';g.style.width=p[1]+'%'}})};
+for(let i=0;i<8;i++)add();S.timer=setInterval(add,1300);
+$$('[data-rb]',el).forEach(b=>b.onclick=()=>{const i=+b.dataset.rb,g=$('#gg'+i,el);b.disabled=true;let p=0;const iv=setInterval(()=>{p+=7;if(p>=100){clearInterval(iv);b.disabled=false;toast(`<b>${PR[i][0]}</b> rebuilt from seq 0 · hash matches production ✓`)}},60)})};
+
+/* ======================= palette ======================= */
+const CMDS=[...VIEWS.map(v=>({t:'Go to '+v[1],k:v[1].toLowerCase()+' '+v[2].toLowerCase(),run:()=>go(v[0]),pv:()=>`<b>Navigate</b><p class="mut">${v[2]}</p>`})),
+{t:'ship SO-2231 partial (480 pcs)',k:'ship shipment so-2231 partial deliver',pv:()=>cmdPv('goods.ship',{so:'SO-2231',line:1,qty:480,mode:'partial'},['Creates event goods.shipped at valid_at=now','Fulfils 60% of SO-2231/1 and keeps 40% open','Drafts INV-5531 (€86k) and updates Promise Board'],'Plan is deterministic: nothing posted until you confirm.'),run:()=>toast('Shipped 480 pcs · INV-5531 drafted · seq '+fmt(482194),()=>{})},
+{t:'what if supplier ACME slips 2 weeks',k:'what if scenario supplier acme slips delay',pv:()=>cmdPv('scenario.fork',{base_seq:482193,change:{supplier:'ACME',delay_weeks:2}},['Forks the ledger (copy-on-write)','Re-runs MRP + promise engine on the overlay','Shows cash, service and margin deltas'],'Production remains untouched.'),run:()=>go('scenario',{scen:0,sp:[2,4,5]})},
+{t:'what if machine M3 is down 5 days',k:'what if machine m3 down breakdown scenario',pv:()=>cmdPv('scenario.fork',{base_seq:482193,change:{machine:'M3',down_days:5}},['Forks the ledger','Re-solves finite-capacity schedule'],'Production remains untouched.'),run:()=>go('scenario',{scen:2,sp:[2,4,5]})},
+{t:'recall lot L-7781',k:'recall lot l-7781 genealogy trace quarantine',pv:()=>cmdPv('trace.forward',{lot:'L-7781'},['Walks the Strand forward from GRN-771','Finds 2 work orders, 2 shipments, 320 pcs','Offers customer notice draft'],'Read-only.'),run:()=>go('strand',{strand:'lot7781',trace:'fwd',hl:new Set()})},
+{t:'approve PO-8821 (€48,200)',k:'approve po-8821 purchase boreal',pv:()=>cmdPv('approval.grant',{doc:'PO-8821',level:2,amount:48200},['Emits approval event signed by you','PO moves to Commitment: open','Decision logged with policy approval.po v14'],'Requires your L2 authority.'),run:()=>{S.resolved.add('p5');toast('Approved PO-8821 · emitted approval.granted')}},
+{t:'margin by customer last quarter',k:'margin customer quarter report analytics',pv:()=>`<b>Gross margin · Q3 (derived from Strands)</b>${[['Kestrel Aero',38.2],['Helio Drives',34.6],['Apex Robotics',30.1],['Nordwerk GmbH',27.9],['Brightline OEM',24.3]].map(r=>`<div class="row" style="margin:8px 0"><span style="width:110px">${r[0]}</span><div class="meter" style="flex:1;width:auto"><i style="width:${r[1]*2.3}%;background:var(--acc)"></i></div><span class="num">${r[1]}%</span></div>`).join('')}<div class="dim">Every bar is traceable to events.</div>`,run:()=>go('ledger',{ltab:'tb'})},
+{t:'close period October',k:'close period month end october',pv:()=>cmdPv('period.close',{period:'2026-10'},['Runs remaining 5 close tasks','Locks period; later changes become restatements'],'Needs Controller role.'),run:()=>go('money')},
+{t:'toggle theme',k:'theme dark light mode',run:()=>$('#theme').click(),pv:()=>'<b>Switch light/dark</b>'},{t:'density: dense',k:'density dense compact',run:()=>setDens('dense'),pv:()=>'<b>Compact layout for planners</b>'},{t:'density: calm',k:'density calm spacious',run:()=>setDens('calm'),pv:()=>'<b>Spacious layout for executives</b>'}];
+function cmdPv(type,args,fx,note){return`<span class="badge b-acc">proposed command</span><pre class="json">${esc(JSON.stringify({type,args,idempotency_key:'cmd_'+fnv(type+JSON.stringify(args))},null,1))}</pre><div class="dim" style="font-size:.8em">EFFECTS</div>${fx.map(f=>`<div>• ${f}</div>`).join('')}<p class="dim" style="font-size:.85em">${note}</p>`}
+let psel=0,pres=[];
+function pal(){const q=$('#pin').value.trim().toLowerCase();pres=CMDS.filter(c=>q.split(/\s+/).every(w=>(c.t+' '+c.k).toLowerCase().includes(w)));if(q&&!pres.length)pres=[{t:'Search ledger for “'+q+'”',run:()=>go('ledger',{ltab:'events',lq:q}),pv:()=>`<b>No exact command.</b><p class="mut">Interpreting as a ledger search. The assistant never invents actions; unknown phrases fall back to read-only search.</p>`}];psel=Math.min(psel,pres.length-1);$('#plist').innerHTML=pres.map((c,i)=>`<div class="opt ${i===psel?'sel':''}" data-i="${i}">${c.t}</div>`).join('');$('#pprev').innerHTML=pres[psel]?pres[psel].pv()+`<div style="margin-top:14px"><button class="btn pri" id="pc">Confirm &amp; run ↵</button></div>`:'';$$('.opt').forEach(o=>{o.onclick=()=>{psel=+o.dataset.i;pal()};o.ondblclick=run});const b=$('#pc');b&&(b.onclick=run)}
+function run(){const c=pres[psel];if(!c)return;closePal();c.run()}
+function openPal(){$('#ov').classList.add('open');$('#pin').value='';psel=0;pal();$('#pin').focus()}
+function closePal(){$('#ov').classList.remove('open')}
+$('#cmdbtn').onclick=openPal;$('#ov').onclick=e=>{if(e.target.id==='ov')closePal()};$('#pin').oninput=()=>{psel=0;pal()};
+document.addEventListener('keydown',e=>{const typing=/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#ov').classList.contains('open')?closePal():openPal();return}
+if($('#ov').classList.contains('open')){if(e.key==='Escape')closePal();else if(e.key==='ArrowDown'){e.preventDefault();psel=Math.min(pres.length-1,psel+1);pal()}else if(e.key==='ArrowUp'){e.preventDefault();psel=Math.max(0,psel-1);pal()}else if(e.key==='Enter'){e.preventDefault();run()}return}
+if(e.key==='Escape'){S.cards=[];drawCard()}if(!typing&&!e.metaKey&&!e.ctrlKey&&/^[0-9]$/.test(e.key)){const v=VIEWS[(+e.key+9)%10];v&&go(v[0])}});
+
+/* ======================= chrome ======================= */
+$('#role').innerHTML=Object.entries(ROLES).map(([k,v])=>`<option value="${k}">${v.n}</option>`).join('');
+$('#role').onchange=e=>{S.role=e.target.value;buildRail();toast(`Workspace: <b>${ROLES[S.role].n}</b> · surfaces re-ranked`);rerender()};
+function setDens(d){document.documentElement.dataset.density=d;$$('#dens button').forEach(b=>b.classList.toggle('on',b.dataset.d===d))}
+$$('#dens button').forEach(b=>b.onclick=()=>setDens(b.dataset.d));
+$('#theme').onclick=()=>{const r=document.documentElement;r.dataset.theme=r.dataset.theme==='dark'?'light':'dark';if(S.view==='flow'||S.view==='scenario')rerender()};
+scrubL();
+const h=location.hash.slice(1);go(VIEWS.some(v=>v[0]===h)?h:'pulse');
+</script>
+</body>
+</html>
