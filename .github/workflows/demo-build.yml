@@ -69,6 +69,8 @@ jobs:
           mkdir -p assets
           PGPASSWORD=erp /usr/lib/postgresql/16/bin/pg_dump -h 127.0.0.1 -U erp -d erp \
             --no-owner --no-privileges --no-comments -f assets/demo.sql
+          # newer pg_dump adds \restrict meta-commands that the bundled (older) psql rejects
+          sed -i '/^\\restrict /d;/^\\unrestrict /d' assets/demo.sql
           ls -la assets/demo.sql
           cp -r frontend/dist assets/web
       - uses: actions/upload-artifact@v4
