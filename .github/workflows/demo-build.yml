@@ -180,6 +180,11 @@ jobs:
           cp -r assets/web stage/web
           cp assets/demo.sql stage/demo.sql
           printf 'WEFT ERP demo\r\n\r\nDouble-click WEFT-ERP-Demo.exe. Your browser opens the app.\r\nSign in: owner@petra.example / Demo@12345\r\nClose the black window to stop. Run with --reset to restore the sample data.\r\n' > stage/READ-ME.txt
+      - name: Probe bundled PostgreSQL (initdb, 90 s limit)
+        run: |
+          timeout 90 stage/pg/bin/initdb.exe -D "$RUNNER_TEMP/probe" -U postgres --auth=trust -E UTF8 --locale=C 2>&1 | tail -25 || echo "initdb probe exit: $?"
+          ls "$RUNNER_TEMP/probe" 2>&1 | head -5
+          rm -rf "$RUNNER_TEMP/probe"
       - name: Smoke test (starts the program, signs in)
         run: |
           export WEFT_NO_BROWSER=1 WEFT_VERBOSE=1
