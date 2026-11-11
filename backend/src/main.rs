@@ -16,6 +16,7 @@ async fn main() {
     let db = PgPoolOptions::new().max_connections(20).connect(&cfg.database_url).await.expect("cannot connect to PostgreSQL");
     MIGRATOR.run(&db).await.expect("database migration failed");
     let state = AppState { db, cfg: Arc::new(cfg.clone()) };
+    if cfg.run_jobs { weft_erp::modules::jobs::spawn(state.clone()); }
     let app = build_app(state);
     let listener = tokio::net::TcpListener::bind(&cfg.bind_addr).await.expect("cannot bind address");
     tracing::info!("WEFT ERP listening on http://{}", cfg.bind_addr);

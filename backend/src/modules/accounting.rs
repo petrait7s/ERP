@@ -5,7 +5,7 @@ use axum::{extract::{Path, Query, State}, Json};
 use chrono::{Datelike, NaiveDate};
 use rust_decimal::Decimal;
 use serde::Deserialize;
-use serde_json::{json, Value};
+use serde_json::json;
 use sqlx::PgConnection;
 use std::collections::HashMap;
 use uuid::Uuid;

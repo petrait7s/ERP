@@ -98,6 +98,10 @@ async fn update_bank(State(st): State<AppState>, user: AuthUser, Path(id): Path<
     Ok(data(doc))
 }
 
+async fn get_bank(State(st): State<AppState>, user: AuthUser, Path(id): Path<Uuid>) -> AppResult<RawJson> {
+    Ok(data(sqlx::query_scalar(&format!("SELECT to_jsonb(x)::text FROM (SELECT {BANK_SELECT} $1 AND b.id = $2) x")).bind(user.company_id).bind(id).fetch_optional(&st.db).await?.ok_or_else(|| AppError::not_found("bank account"))?))
+}
+
 async fn bank_statement(State(st): State<AppState>, user: AuthUser, Path(id): Path<Uuid>, Query(q): Query<HashMap<String, String>>) -> AppResult<RawJson> {
     let gl: Uuid = sqlx::query_scalar("SELECT account_id FROM bank_accounts WHERE id = $1 AND company_id = $2").bind(id).bind(user.company_id).fetch_optional(&st.db).await?.ok_or_else(|| AppError::not_found("bank account"))?;
     let mut qb = db::list_query();
@@ -300,6 +304,7 @@ pub fn api() -> Api {
         .get("/bank-accounts", "finance.read", "Bank, cash and mobile accounts with balances", list_banks).query("page,per_page,kind,currency")
         .post("/bank-accounts", "finance.write", "Add a bank or cash account (creates its ledger account)", create_bank)
         .body(r#"{"code":"EBL-CA","name":"Eastern Bank Current A/C","kind":"bank","bank_name":"Eastern Bank PLC","branch_name":"Motijheel","account_no":"1011220001234","routing_no":"095274241","currency":"BDT"}"#)
+        .get("/bank-accounts/:id", "finance.read", "One bank or cash account with balance", get_bank)
         .put("/bank-accounts/:id", "finance.write", "Update bank account details", update_bank)
         .get("/bank-accounts/:id/statement", "finance.read", "Account statement with running balance", bank_statement).query("page,per_page,from,to")
         .get("/bank-transfers", "finance.read", "Transfers between own accounts", list_transfers).query("page,per_page,from,to")

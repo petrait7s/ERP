@@ -19,7 +19,21 @@ pub static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("./migrations");
 
 /// Every module's routes with their documentation.
 pub fn all_routes() -> api::Api {
-    modules::admin::api().merge(modules::masters::api())
+    modules::admin::api()
+        .merge(modules::masters::api())
+        .merge(modules::accounting::api())
+        .merge(modules::finance::api())
+        .merge(modules::inventory::api())
+        .merge(modules::purchase::api())
+        .merge(modules::import::api())
+        .merge(modules::customs::api())
+        .merge(modules::landed::api())
+        .merge(modules::sales::api())
+        .merge(modules::hr::api())
+        .merge(modules::tax::api())
+        .merge(modules::approvals::api())
+        .merge(modules::notifications::api())
+        .merge(modules::reports::api())
 }
 
 async fn health(State(st): State<AppState>) -> Json<Value> {

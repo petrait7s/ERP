@@ -1,2 +1,16 @@
+pub mod accounting;
 pub mod admin;
+pub mod approvals;
+pub mod customs;
+pub mod finance;
+pub mod hr;
+pub mod import;
+pub mod inventory;
+pub mod jobs;
+pub mod landed;
 pub mod masters;
+pub mod notifications;
+pub mod purchase;
+pub mod reports;
+pub mod sales;
+pub mod tax;
