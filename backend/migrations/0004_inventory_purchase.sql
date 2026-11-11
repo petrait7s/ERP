@@ -61,6 +61,8 @@ CREATE TABLE stock_adjustments (
   adjustment_date date NOT NULL,
   warehouse_id uuid NOT NULL REFERENCES warehouses(id),
   reason       text NOT NULL,
+  is_opening   boolean NOT NULL DEFAULT false,   -- opening stock: contra account is Opening Balance Equity
+  total_value  numeric(18,2) NOT NULL DEFAULT 0,
   status       text NOT NULL DEFAULT 'posted' CHECK (status IN ('pending_approval','posted','rejected')),
   journal_entry_id uuid REFERENCES journal_entries(id),
   created_by   uuid REFERENCES users(id),
@@ -154,6 +156,7 @@ CREATE TABLE goods_receipts (
   warehouse_id uuid NOT NULL REFERENCES warehouses(id),
   receipt_date date NOT NULL,
   total_value  numeric(18,2) NOT NULL DEFAULT 0,
+  billed       boolean NOT NULL DEFAULT false,
   notes        text,
   journal_entry_id uuid REFERENCES journal_entries(id),
   created_by   uuid REFERENCES users(id),
