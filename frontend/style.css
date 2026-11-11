@@ -18,8 +18,9 @@
 }
 *{box-sizing:border-box;margin:0}
 html,body{height:100%}
-body{background:var(--bg);color:var(--tx);font:var(--fs)/1.5 "Inter","Segoe UI","Noto Sans Bengali","Hind Siliguri",system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{background:var(--bg);color:var(--tx);font:var(--fs)/1.5 "Montserrat","Tiro Bangla","Noto Sans Bengali",system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 button,input,select,textarea{font:inherit;color:inherit}
+html[lang=bn] body,html[lang=bn] button,html[lang=bn] input,html[lang=bn] select,html[lang=bn] textarea{font-family:"Tiro Bangla","Noto Sans Bengali","Montserrat",system-ui,sans-serif}
 button{cursor:pointer}
 a{color:var(--teal-d);text-decoration:none}a:hover{text-decoration:underline}
 .num,.mono{font-variant-numeric:tabular-nums}
