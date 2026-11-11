@@ -101,7 +101,7 @@ async fn list(State(st): State<AppState>, user: AuthUser, Query(q): Query<HashMa
     if q.get("mine").map(String::as_str) == Some("true") {
         qb.push(" AND a.status = 'pending' AND (a.approver_role = "); qb.push_bind(user.role.clone()); qb.push(" OR "); qb.push_bind(user.role == "owner"); qb.push(")");
     }
-    db::page_json(&st.db, qb, "created_at DESC", &q).await
+    db::page_json(&st.db, qb, "a.created_at DESC", &q).await
 }
 
 async fn list_rules(State(st): State<AppState>, user: AuthUser) -> AppResult<RawJson> {

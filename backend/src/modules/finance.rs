@@ -150,7 +150,7 @@ async fn list_transfers(State(st): State<AppState>, user: AuthUser, Query(q): Qu
     qb.push("t.*, (SELECT name FROM bank_accounts b WHERE b.id = t.from_bank_account_id) AS from_account, (SELECT name FROM bank_accounts b WHERE b.id = t.to_bank_account_id) AS to_account FROM bank_transfers t WHERE t.company_id = ");
     qb.push_bind(user.company_id);
     db::filter_dates(&mut qb, &q, "t.transfer_date");
-    db::page_json(&st.db, qb, "created_at DESC", &q).await
+    db::page_json(&st.db, qb, "t.created_at DESC", &q).await
 }
 
 // ---------------- supplier payments ----------------
@@ -234,7 +234,7 @@ async fn list_payments(State(st): State<AppState>, user: AuthUser, Query(q): Que
     db::filter_eq(&mut qb, &q, "supplier_id", "p.supplier_id", "::uuid");
     db::filter_eq(&mut qb, &q, "status", "p.status", "");
     db::filter_dates(&mut qb, &q, "p.payment_date");
-    db::page_json(&st.db, qb, "created_at DESC", &q).await
+    db::page_json(&st.db, qb, "p.created_at DESC", &q).await
 }
 async fn get_payment(State(st): State<AppState>, user: AuthUser, Path(id): Path<Uuid>) -> AppResult<RawJson> {
     Ok(data(sqlx::query_scalar(PAY_DOC).bind(id).bind(user.company_id).fetch_optional(&st.db).await?.ok_or_else(|| AppError::not_found("payment"))?))

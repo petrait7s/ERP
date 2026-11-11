@@ -51,9 +51,15 @@ pub fn build_app(state: AppState) -> Router {
     let v1 = routes.router
         .route("/openapi.json", get(move || { let s = spec.clone(); async move { Json((*s).clone()) } }))
         .layer(middleware::from_fn_with_state(state.clone(), auth::attach_user));
-    Router::new()
+    let mut app = Router::new()
         .route("/health", get(health))
-        .nest("/api/v1", v1)
+        .nest("/api/v1", v1);
+    if let Some(dir) = &state.cfg.static_dir {
+        // The web app is a single-page application: unknown paths fall back to index.html.
+        let index = std::path::Path::new(dir).join("index.html");
+        app = app.fallback_service(tower_http::services::ServeDir::new(dir).fallback(tower_http::services::ServeFile::new(index)));
+    }
+    app
         .layer(RequestBodyLimitLayer::new(2 * 1024 * 1024))
         .layer(SetResponseHeaderLayer::if_not_present(header::X_CONTENT_TYPE_OPTIONS, HeaderValue::from_static("nosniff")))
         .layer(SetResponseHeaderLayer::if_not_present(header::X_FRAME_OPTIONS, HeaderValue::from_static("DENY")))

@@ -41,7 +41,7 @@ async fn list(State(st): State<AppState>, user: AuthUser, Query(q): Query<HashMa
     qb.push(" AND n.user_id = "); qb.push_bind(user.user_id);
     if q.get("unread").map(String::as_str) == Some("true") { qb.push(" AND n.read_at IS NULL"); }
     db::filter_eq(&mut qb, &q, "severity", "n.severity", "");
-    db::page_json(&st.db, qb, "created_at DESC", &q).await
+    db::page_json(&st.db, qb, "n.created_at DESC", &q).await
 }
 
 async fn unread_count(State(st): State<AppState>, user: AuthUser) -> AppResult<Json<Value>> {

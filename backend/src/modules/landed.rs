@@ -237,7 +237,7 @@ async fn list(State(st): State<AppState>, user: AuthUser, Query(q): Query<HashMa
     qb.push_bind(user.company_id);
     db::filter_eq(&mut qb, &q, "status", "c.status", "");
     db::filter_eq(&mut qb, &q, "shipment_id", "c.shipment_id", "::uuid");
-    db::page_json(&st.db, qb, "created_at DESC", &q).await
+    db::page_json(&st.db, qb, "c.created_at DESC", &q).await
 }
 async fn get(State(st): State<AppState>, user: AuthUser, Path(id): Path<Uuid>) -> AppResult<RawJson> {
     let mut tx = st.db.begin().await?;

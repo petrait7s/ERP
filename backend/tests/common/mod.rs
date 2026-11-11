@@ -19,7 +19,7 @@ pub async fn new_app() -> TestApp {
     sqlx::query(&format!("CREATE DATABASE {name}")).execute(&admin).await.unwrap();
     let db = PgPoolOptions::new().max_connections(10).connect(&db_url(&name)).await.unwrap();
     MIGRATOR.run(&db).await.unwrap();
-    let cfg = Config { database_url: db_url(&name), bind_addr: "127.0.0.1:0".into(), jwt_secret: "test-secret-test-secret-test-secret-1234".into(), access_ttl_minutes: 60, refresh_ttl_days: 1, cors_origins: vec![], run_jobs: false };
+    let cfg = Config { database_url: db_url(&name), bind_addr: "127.0.0.1:0".into(), jwt_secret: "test-secret-test-secret-test-secret-1234".into(), access_ttl_minutes: 60, refresh_ttl_days: 1, cors_origins: vec![], run_jobs: false, static_dir: None };
     let state = AppState { db: db.clone(), cfg: Arc::new(cfg) };
     let app = build_app(state.clone());
     let mut t = TestApp { state, app, db, token: String::new(), company: String::new(), name };

@@ -9,6 +9,8 @@ pub struct Config {
     pub refresh_ttl_days: i64,
     pub cors_origins: Vec<String>,
     pub run_jobs: bool,
+    /// Directory with the built web app; when set, the API also serves it (single-origin deployment).
+    pub static_dir: Option<String>,
 }
 
 impl Config {
@@ -26,6 +28,7 @@ impl Config {
             refresh_ttl_days: env::var("REFRESH_TTL_DAYS").ok().and_then(|v| v.parse().ok()).unwrap_or(14),
             cors_origins: env::var("CORS_ORIGINS").unwrap_or_default().split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect(),
             run_jobs: env::var("RUN_JOBS").map(|v| v != "0" && v != "false").unwrap_or(true),
+            static_dir: env::var("STATIC_DIR").ok().filter(|s| !s.is_empty()),
         })
     }
 }

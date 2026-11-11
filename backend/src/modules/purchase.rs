@@ -42,7 +42,7 @@ async fn list_requisitions(State(st): State<AppState>, user: AuthUser, Query(q):
     qb.push("r.*, (SELECT count(*) FROM purchase_requisition_lines l WHERE l.requisition_id = r.id) AS line_count FROM purchase_requisitions r WHERE r.company_id = ");
     qb.push_bind(user.company_id);
     db::filter_eq(&mut qb, &q, "status", "r.status", "");
-    db::page_json(&st.db, qb, "created_at DESC", &q).await
+    db::page_json(&st.db, qb, "r.created_at DESC", &q).await
 }
 async fn get_requisition(State(st): State<AppState>, user: AuthUser, Path(id): Path<Uuid>) -> AppResult<RawJson> {
     Ok(data(sqlx::query_scalar(REQ_DOC).bind(id).bind(user.company_id).fetch_optional(&st.db).await?.ok_or_else(|| AppError::not_found("requisition"))?))
@@ -216,7 +216,7 @@ async fn list_pos(State(st): State<AppState>, user: AuthUser, Query(q): Query<Ha
     db::filter_dates(&mut qb, &q, "o.order_date");
     db::filter_search(&mut qb, &q, &["o.po_no", "s.name", "o.pi_no"]);
     if let Some(br) = user.branch_id { qb.push(" AND o.branch_id = "); qb.push_bind(br); }
-    db::page_json(&st.db, qb, "created_at DESC", &q).await
+    db::page_json(&st.db, qb, "o.created_at DESC", &q).await
 }
 async fn get_po(State(st): State<AppState>, user: AuthUser, Path(id): Path<Uuid>) -> AppResult<RawJson> {
     Ok(data(sqlx::query_scalar(PO_DOC).bind(id).bind(user.company_id).fetch_optional(&st.db).await?.ok_or_else(|| AppError::not_found("purchase order"))?))
@@ -281,7 +281,7 @@ async fn list_grns(State(st): State<AppState>, user: AuthUser, Query(q): Query<H
     db::filter_eq(&mut qb, &q, "supplier_id", "o.supplier_id", "::uuid");
     if q.get("unbilled").map(String::as_str) == Some("true") { qb.push(" AND NOT g.billed AND o.po_type = 'local'"); }
     db::filter_dates(&mut qb, &q, "g.receipt_date");
-    db::page_json(&st.db, qb, "created_at DESC", &q).await
+    db::page_json(&st.db, qb, "g.created_at DESC", &q).await
 }
 async fn get_grn(State(st): State<AppState>, user: AuthUser, Path(id): Path<Uuid>) -> AppResult<RawJson> {
     Ok(data(sqlx::query_scalar(GRN_DOC).bind(id).bind(user.company_id).fetch_optional(&st.db).await?.ok_or_else(|| AppError::not_found("goods receipt"))?))

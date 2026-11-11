@@ -156,7 +156,7 @@ async fn list_lcs(State(st): State<AppState>, user: AuthUser, Query(q): Query<Ha
     db::filter_eq(&mut qb, &q, "status", "c.status", "");
     db::filter_eq(&mut qb, &q, "po_id", "c.po_id", "::uuid");
     db::filter_search(&mut qb, &q, &["c.lc_no", "c.bank_lc_no", "s.name", "o.po_no"]);
-    db::page_json(&st.db, qb, "created_at DESC", &q).await
+    db::page_json(&st.db, qb, "c.created_at DESC", &q).await
 }
 async fn get_lc(State(st): State<AppState>, user: AuthUser, Path(id): Path<Uuid>) -> AppResult<RawJson> {
     let mut conn = st.db.acquire().await?;
@@ -368,7 +368,7 @@ async fn list_shipments(State(st): State<AppState>, user: AuthUser, Query(q): Qu
     if q.get("active").map(String::as_str) == Some("true") { qb.push(" AND h.status NOT IN ('received','cancelled')"); }
     db::filter_search(&mut qb, &q, &["h.shipment_no", "h.bl_no", "h.vessel_name", "s.name", "o.po_no", "(SELECT string_agg(c.container_no, ' ') FROM containers c WHERE c.shipment_id = h.id)"]);
     if let Some(br) = user.branch_id { qb.push(" AND h.branch_id = "); qb.push_bind(br); }
-    db::page_json(&st.db, qb, "created_at DESC", &q).await
+    db::page_json(&st.db, qb, "h.created_at DESC", &q).await
 }
 async fn get_shipment(State(st): State<AppState>, user: AuthUser, Path(id): Path<Uuid>) -> AppResult<RawJson> {
     let mut conn = st.db.acquire().await?;
@@ -550,7 +550,7 @@ async fn list_foreign_payments(State(st): State<AppState>, user: AuthUser, Query
     db::filter_eq(&mut qb, &q, "po_id", "f.po_id", "::uuid");
     db::filter_eq(&mut qb, &q, "shipment_id", "f.shipment_id", "::uuid");
     db::filter_dates(&mut qb, &q, "f.payment_date");
-    db::page_json(&st.db, qb, "created_at DESC", &q).await
+    db::page_json(&st.db, qb, "f.created_at DESC", &q).await
 }
 async fn get_foreign_payment(State(st): State<AppState>, user: AuthUser, Path(id): Path<Uuid>) -> AppResult<RawJson> {
     Ok(data(sqlx::query_scalar(FP_DOC).bind(id).bind(user.company_id).fetch_optional(&st.db).await?.ok_or_else(|| AppError::not_found("payment"))?))

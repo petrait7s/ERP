@@ -101,7 +101,7 @@ async fn list_moves(State(st): State<AppState>, user: AuthUser, Query(q): Query<
     db::filter_eq(&mut qb, &q, "move_type", "m.move_type", "");
     db::filter_eq(&mut qb, &q, "source_id", "m.source_id", "::uuid");
     db::filter_dates(&mut qb, &q, "m.move_date");
-    db::page_json(&st.db, qb, "created_at DESC", &q).await
+    db::page_json(&st.db, qb, "m.created_at DESC", &q).await
 }
 
 #[derive(Deserialize)]
@@ -139,7 +139,7 @@ async fn list_transfers(State(st): State<AppState>, user: AuthUser, Query(q): Qu
     qb.push("t.*, (SELECT name FROM warehouses w WHERE w.id = t.from_warehouse_id) AS from_warehouse, (SELECT name FROM warehouses w WHERE w.id = t.to_warehouse_id) AS to_warehouse, (SELECT coalesce(sum(value),0) FROM stock_transfer_lines l WHERE l.transfer_id = t.id) AS total_value FROM stock_transfers t WHERE t.company_id = ");
     qb.push_bind(user.company_id);
     db::filter_dates(&mut qb, &q, "t.transfer_date");
-    db::page_json(&st.db, qb, "created_at DESC", &q).await
+    db::page_json(&st.db, qb, "t.created_at DESC", &q).await
 }
 async fn get_transfer(State(st): State<AppState>, user: AuthUser, Path(id): Path<Uuid>) -> AppResult<RawJson> {
     Ok(data(sqlx::query_scalar(TRANSFER_DOC).bind(id).bind(user.company_id).fetch_optional(&st.db).await?.ok_or_else(|| AppError::not_found("transfer"))?))
@@ -224,7 +224,7 @@ async fn list_adjustments(State(st): State<AppState>, user: AuthUser, Query(q): 
     qb.push_bind(user.company_id);
     db::filter_eq(&mut qb, &q, "status", "a.status", "");
     db::filter_dates(&mut qb, &q, "a.adjustment_date");
-    db::page_json(&st.db, qb, "created_at DESC", &q).await
+    db::page_json(&st.db, qb, "a.created_at DESC", &q).await
 }
 async fn get_adjustment(State(st): State<AppState>, user: AuthUser, Path(id): Path<Uuid>) -> AppResult<RawJson> {
     Ok(data(sqlx::query_scalar(ADJ_DOC).bind(id).bind(user.company_id).fetch_optional(&st.db).await?.ok_or_else(|| AppError::not_found("adjustment"))?))

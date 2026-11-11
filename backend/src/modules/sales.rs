@@ -173,7 +173,7 @@ async fn list_so(State(st): State<AppState>, user: AuthUser, Query(q): Query<Has
     db::filter_dates(&mut qb, &q, "o.order_date");
     db::filter_search(&mut qb, &q, &["o.so_no", "c.name"]);
     if let Some(br) = user.branch_id { qb.push(" AND o.branch_id = "); qb.push_bind(br); }
-    db::page_json(&st.db, qb, "created_at DESC", &q).await
+    db::page_json(&st.db, qb, "o.created_at DESC", &q).await
 }
 async fn get_so(State(st): State<AppState>, user: AuthUser, Path(id): Path<Uuid>) -> AppResult<RawJson> {
     Ok(data(sqlx::query_scalar(SO_DOC).bind(id).bind(user.company_id).fetch_optional(&st.db).await?.ok_or_else(|| AppError::not_found("sales order"))?))
@@ -229,7 +229,7 @@ async fn list_deliveries(State(st): State<AppState>, user: AuthUser, Query(q): Q
     db::filter_eq(&mut qb, &q, "customer_id", "d.customer_id", "::uuid");
     if q.get("uninvoiced").map(String::as_str) == Some("true") { qb.push(" AND NOT d.invoiced"); }
     db::filter_dates(&mut qb, &q, "d.delivery_date");
-    db::page_json(&st.db, qb, "created_at DESC", &q).await
+    db::page_json(&st.db, qb, "d.created_at DESC", &q).await
 }
 async fn get_delivery(State(st): State<AppState>, user: AuthUser, Path(id): Path<Uuid>) -> AppResult<RawJson> {
     Ok(data(sqlx::query_scalar(DL_DOC).bind(id).bind(user.company_id).fetch_optional(&st.db).await?.ok_or_else(|| AppError::not_found("delivery"))?))
@@ -392,7 +392,7 @@ async fn list_receipts(State(st): State<AppState>, user: AuthUser, Query(q): Que
     db::filter_eq(&mut qb, &q, "customer_id", "r.customer_id", "::uuid");
     if q.get("unallocated").map(String::as_str) == Some("true") { qb.push(" AND r.unallocated > 0"); }
     db::filter_dates(&mut qb, &q, "r.receipt_date");
-    db::page_json(&st.db, qb, "created_at DESC", &q).await
+    db::page_json(&st.db, qb, "r.created_at DESC", &q).await
 }
 async fn get_receipt(State(st): State<AppState>, user: AuthUser, Path(id): Path<Uuid>) -> AppResult<RawJson> {
     Ok(data(sqlx::query_scalar(RC_DOC).bind(id).bind(user.company_id).fetch_optional(&st.db).await?.ok_or_else(|| AppError::not_found("receipt"))?))
@@ -451,7 +451,7 @@ async fn list_returns(State(st): State<AppState>, user: AuthUser, Query(q): Quer
     qb.push_bind(user.company_id);
     db::filter_eq(&mut qb, &q, "invoice_id", "s.invoice_id", "::uuid");
     db::filter_dates(&mut qb, &q, "s.return_date");
-    db::page_json(&st.db, qb, "created_at DESC", &q).await
+    db::page_json(&st.db, qb, "s.created_at DESC", &q).await
 }
 async fn get_return(State(st): State<AppState>, user: AuthUser, Path(id): Path<Uuid>) -> AppResult<RawJson> {
     Ok(data(sqlx::query_scalar(RT_DOC).bind(id).bind(user.company_id).fetch_optional(&st.db).await?.ok_or_else(|| AppError::not_found("credit note"))?))
