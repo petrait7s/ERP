@@ -87,8 +87,8 @@ async fn main() {
 
     let url = format!("http://localhost:{app_port}");
     println!("\n  WEFT ERP demo is running:  {url}");
-    println!("  Sign in:  owner@meghna.example  /  Demo@12345");
-    println!("  (other roles: sales@ store@ hr@ meghna.example, same password)");
+    println!("  Sign in:  owner@petra.example  /  Demo@12345");
+    println!("  (other roles: sales@ store@ hr@ petra.example, same password)");
     println!("\n  Keep this window open during the demo. Close it, or press Ctrl+C, to stop.\n");
     let u = url.clone();
     if std::env::var_os("WEFT_NO_BROWSER").is_none() {

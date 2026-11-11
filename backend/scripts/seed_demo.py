@@ -32,18 +32,18 @@ def approve_all():
 
 # --- company and owner ---
 try:
-    call("POST", "/setup", {"company_code": "MTC", "company_name": "Meghna Trade Corporation", "company_name_bn": "মেঘনা ট্রেড কর্পোরেশন",
+    call("POST", "/setup", {"company_code": "PTC", "company_name": "PETRA Trade Corporation", "company_name_bn": "পেট্রা ট্রেড কর্পোরেশন",
         "bin": "000123456-0101", "tin": "123456789012", "address": "Motijheel C/A, Dhaka-1000",
-        "admin_email": "owner@meghna.example", "admin_password": "Demo@12345", "admin_name": "Tanvir Ahmed"})
+        "admin_email": "owner@petra.example", "admin_password": "Demo@12345", "admin_name": "Tanvir Ahmed"})
 except SystemExit as e:
     print("setup skipped:", str(e)[:80])
-TOKEN = call("POST", "/auth/login", {"email": "owner@meghna.example", "password": "Demo@12345"})["data"]["access_token"]
-call("PUT", "/company", {"irc_no": "BA-0123456", "trade_license": "TRAD/DNCC/045678", "phone": "+880 2 9555000", "email": "info@meghna.example"})
+TOKEN = call("POST", "/auth/login", {"email": "owner@petra.example", "password": "Demo@12345"})["data"]["access_token"]
+call("PUT", "/company", {"irc_no": "BA-0123456", "trade_license": "TRAD/DNCC/045678", "phone": "+880 2 9555000", "email": "info@petra.example"})
 
 # --- users for each role ---
-for email, name, role in [("manager@meghna.example", "Farhana Rahman", "manager"), ("accounts@meghna.example", "Rahim Uddin", "accountant"),
-                          ("import@meghna.example", "Nusrat Jahan", "import_officer"), ("store@meghna.example", "Kamal Hossain", "warehouse"),
-                          ("sales@meghna.example", "Sabbir Khan", "sales"), ("hr@meghna.example", "Mitu Akter", "hr")]:
+for email, name, role in [("manager@petra.example", "Farhana Rahman", "manager"), ("accounts@petra.example", "Rahim Uddin", "accountant"),
+                          ("import@petra.example", "Nusrat Jahan", "import_officer"), ("store@petra.example", "Kamal Hossain", "warehouse"),
+                          ("sales@petra.example", "Sabbir Khan", "sales"), ("hr@petra.example", "Mitu Akter", "hr")]:
     call("POST", "/users", {"email": email, "full_name": name, "password": "Demo@12345", "role": role}, expect=(200, 201, 409))
 
 # --- banks and capital ---
@@ -131,4 +131,4 @@ for name, bn, desig, basic in [("Nusrat Jahan", "নুসরাত জাহা
 emps = call("GET", "/employees")["data"]
 post("/attendance", {"work_date": "2026-12-09", "rows": [{"employee_id": e["id"], "status": "present", "check_in": "09:05:00", "check_out": "18:00:00"} for e in emps]})
 
-print("Demo data loaded. Sign in as owner@meghna.example / Demo@12345 (company MTC).")
+print("Demo data loaded. Sign in as owner@petra.example / Demo@12345 (company PTC).")

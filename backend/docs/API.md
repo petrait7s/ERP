@@ -27,13 +27,13 @@ Base URL: `/api/v1`. Send `Authorization: Bearer <access_token>` on every call e
 **POST `/setup`** example body:
 
 ```json
-{"company_code":"MTC","company_name":"Meghna Trade Corporation","company_name_bn":"মেঘনা ট্রেড কর্পোরেশন","bin":"000123456-0101","tin":"123456789012","address":"Motijheel C/A, Dhaka","admin_email":"owner@example.com","admin_password":"Str0ngPassw0rd","admin_name":"Business Owner"}
+{"company_code":"PTC","company_name":"PETRA Trade Corporation","company_name_bn":"পেট্রা ট্রেড কর্পোরেশন","bin":"000123456-0101","tin":"123456789012","address":"Motijheel C/A, Dhaka","admin_email":"owner@example.com","admin_password":"Str0ngPassw0rd","admin_name":"Business Owner"}
 ```
 
 **POST `/auth/login`** example body:
 
 ```json
-{"email":"owner@example.com","password":"Str0ngPassw0rd","company_code":"MTC"}
+{"email":"owner@example.com","password":"Str0ngPassw0rd","company_code":"PTC"}
 ```
 
 **POST `/auth/refresh`** example body:
@@ -90,7 +90,7 @@ Base URL: `/api/v1`. Send `Authorization: Bearer <access_token>` on every call e
 **POST `/companies`** example body:
 
 ```json
-{"code":"MTC2","name":"Meghna Distribution Ltd","bin":"000987654-0101"}
+{"code":"PTC2","name":"PETRA Distribution Ltd","bin":"000987654-0101"}
 ```
 
 **PUT `/company`** example body:

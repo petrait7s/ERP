@@ -30,7 +30,7 @@ const navLabels = async p => (await p.$$eval('.nav a span', els => els.map(e => 
   const browser = await chromium.launch();
 
   // ---------- owner: whole system, every screen loads ----------
-  const o = await session(browser, 'owner@meghna.example');
+  const o = await session(browser, 'owner@petra.example');
   const nav = await navLabels(o);
   check(['Dashboard', 'Imports & Voyages', 'Landed Cost', 'Customs', 'Replenishment', 'Procurement', 'Order Book', 'Inventory & Warehouse', 'Sales & Customers', 'Ledger Studio', 'Accounting & Finance', 'Cash & FX', 'VAT & Tax', 'HR & Payroll', 'Policy & Approvals', 'Reports & Analytics', 'Administration'].every(x => nav.includes(x)), 'owner sees every module in the menu');
   for (const r of ['/imports', '/landed-costs', '/customs', '/replenishment', '/procurement', '/order-book', '/inventory', '/sales', '/ledger', '/accounting', '/cash', '/tax', '/hr', '/policy', '/reports', '/admin']) {
@@ -90,7 +90,7 @@ const navLabels = async p => (await p.$$eval('.nav a span', els => els.map(e => 
   check(o.errors.length === 0, 'no browser errors for the owner session' + (o.errors.length ? ': ' + o.errors.join(' | ') : ''));
 
   // ---------- role-based views ----------
-  const s = await session(browser, 'sales@meghna.example');
+  const s = await session(browser, 'sales@petra.example');
   const sn = await navLabels(s);
   check(sn.includes('Sales & Customers') && sn.includes('Order Book'), 'sales sees sales screens');
   check(!sn.includes('Administration') && !sn.includes('HR & Payroll') && !sn.includes('Ledger Studio') && !sn.includes('Imports & Voyages'), 'sales does not see admin, HR, ledger or imports');
@@ -103,17 +103,17 @@ const navLabels = async p => (await p.$$eval('.nav a span', els => els.map(e => 
   check(await s.locator('.kpi').count() > 0 && !salesText.includes('Cash & bank'), 'sales dashboard shows only sales figures');
   check(s.errors.length === 0, 'no browser errors for the sales session' + (s.errors.length ? ': ' + s.errors.join(' | ') : ''));
 
-  const w = await session(browser, 'store@meghna.example');
+  const w = await session(browser, 'store@petra.example');
   const wn = await navLabels(w);
   check(wn.includes('Inventory & Warehouse') && !wn.includes('Accounting & Finance') && !wn.includes('Administration'), 'warehouse staff see stock but not accounts or admin');
 
-  const h = await session(browser, 'hr@meghna.example');
+  const h = await session(browser, 'hr@petra.example');
   const hn = await navLabels(h);
   check(hn.includes('HR & Payroll') && !hn.includes('Sales & Customers') && !hn.includes('Ledger Studio'), 'HR sees people screens only');
   await h.go('/hr'); await h.click('button:has-text("Payroll")'); await h.waitForTimeout(800);
 
   // ---------- phone layout ----------
-  const m = await session(browser, 'owner@meghna.example', { width: 390, height: 800 });
+  const m = await session(browser, 'owner@petra.example', { width: 390, height: 800 });
   check(await m.locator('.menu-btn').isVisible(), 'phone layout shows the menu button');
   await m.click('.menu-btn'); await m.waitForTimeout(400);
   check((await m.locator('.side').getAttribute('class')).includes('open'), 'phone menu opens');

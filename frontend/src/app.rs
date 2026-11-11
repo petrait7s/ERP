@@ -110,7 +110,7 @@ fn Login() -> impl IntoView {
                 <div class="row"><div><h2>{move || if setup_mode.get() { "Set up your company".to_string() } else { t("Sign in") }}</h2><p class="mut">{move || if setup_mode.get() { "Create the company and the owner account." } else { "Welcome back." }}</p></div>
                     <button type="button" class="lang-btn sp" on:click=move |_| state::set_bn(!state::app().bn.get_untracked())>{move || if state::bn_now() { "English" } else { "বাংলা" }}</button></div>
                 {move || setup_mode.get().then(|| view! { <div class="col">
-                    <div class="field"><label>"Company code"</label><input class="input" placeholder="MTC" prop:value=move || f[0].get() on:input=move |e| f[0].set(event_target_value(&e))/></div>
+                    <div class="field"><label>"Company code"</label><input class="input" placeholder="PTC" prop:value=move || f[0].get() on:input=move |e| f[0].set(event_target_value(&e))/></div>
                     <div class="field"><label>"Company name"</label><input class="input" prop:value=move || f[1].get() on:input=move |e| f[1].set(event_target_value(&e))/></div>
                     <div class="field"><label>"BIN (VAT registration)"</label><input class="input" placeholder="000123456-0101" prop:value=move || f[2].get() on:input=move |e| f[2].set(event_target_value(&e))/></div>
                     <div class="field"><label>"Your name"</label><input class="input" prop:value=move || f[3].get() on:input=move |e| f[3].set(event_target_value(&e))/></div></div> })}

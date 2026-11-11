@@ -79,7 +79,7 @@ jobs:
   # 2. Fetch PostgreSQL binaries (once per platform) and build the launcher + package.
   linux:
     needs: assets
-    runs-on: ubuntu-22.04 # older glibc so the AppImage runs on older distributions too
+    runs-on: ubuntu-24.04 # the bundled PostgreSQL needs glibc 2.36 or newer
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -127,7 +127,7 @@ jobs:
           for i in $(seq 1 120); do curl -fsS http://127.0.0.1:8080/health >/dev/null 2>&1 && break; sleep 1; done
           cat run.log
           TOKEN=$(curl -fsS -X POST http://127.0.0.1:8080/api/v1/auth/login -H 'Content-Type: application/json' \
-            -d '{"email":"owner@meghna.example","password":"Demo@12345"}' | python3 -c 'import sys,json;d=json.load(sys.stdin);print(d.get("data",d).get("access_token",""))')
+            -d '{"email":"owner@petra.example","password":"Demo@12345"}' | python3 -c 'import sys,json;d=json.load(sys.stdin);print(d.get("data",d).get("access_token",""))')
           test -n "$TOKEN"
           curl -fsS http://127.0.0.1:8080/ | grep -qi "WEFT"
           pkill -TERM -f WEFT-ERP-Demo || true
@@ -174,7 +174,7 @@ jobs:
           cp -r pgsrc stage/pg
           cp -r assets/web stage/web
           cp assets/demo.sql stage/demo.sql
-          printf 'WEFT ERP demo\r\n\r\nDouble-click WEFT-ERP-Demo.exe. Your browser opens the app.\r\nSign in: owner@meghna.example / Demo@12345\r\nClose the black window to stop. Run with --reset to restore the sample data.\r\n' > stage/READ-ME.txt
+          printf 'WEFT ERP demo\r\n\r\nDouble-click WEFT-ERP-Demo.exe. Your browser opens the app.\r\nSign in: owner@petra.example / Demo@12345\r\nClose the black window to stop. Run with --reset to restore the sample data.\r\n' > stage/READ-ME.txt
       - name: Smoke test (starts the program, signs in)
         run: |
           export WEFT_NO_BROWSER=1
@@ -182,7 +182,7 @@ jobs:
           for i in $(seq 1 180); do curl -fsS http://127.0.0.1:8080/health >/dev/null 2>&1 && break; sleep 1; done
           cat run.log
           curl -fsS -X POST http://127.0.0.1:8080/api/v1/auth/login -H 'Content-Type: application/json' \
-            -d '{"email":"owner@meghna.example","password":"Demo@12345"}' | grep -q access_token
+            -d '{"email":"owner@petra.example","password":"Demo@12345"}' | grep -q access_token
           taskkill //F //IM WEFT-ERP-Demo.exe || true
           stage/pg/bin/pg_ctl.exe -D "$LOCALAPPDATA/WEFT-ERP-Demo/pgdata" -m immediate stop || true
           rm -rf "$LOCALAPPDATA/WEFT-ERP-Demo"

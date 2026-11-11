@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # One-shot setup and launcher for Fedora Workstation.
 #   ./run-fedora.sh            install what is missing, build, start on http://localhost:8080
-#   ./run-fedora.sh --demo     same, and load the demo company (owner@meghna.example / Demo@12345)
+#   ./run-fedora.sh --demo     same, and load the demo company (owner@petra.example / Demo@12345)
 # Safe to run again. Needs sudo for installing packages and configuring PostgreSQL.
 set -euo pipefail
 cd "$(dirname "$0")"

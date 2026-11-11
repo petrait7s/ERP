@@ -23,7 +23,7 @@ pub async fn new_app() -> TestApp {
     let state = AppState { db: db.clone(), cfg: Arc::new(cfg) };
     let app = build_app(state.clone());
     let mut t = TestApp { state, app, db, token: String::new(), company: String::new(), name };
-    let (s, b) = t.raw(Method::POST, "/api/v1/setup", None, Some(json!({"company_code": "MTC", "company_name": "Meghna Trade Corporation", "bin": "000123456-0101", "admin_email": "owner@example.com", "admin_password": "Str0ngPassw0rd", "admin_name": "Owner"}))).await;
+    let (s, b) = t.raw(Method::POST, "/api/v1/setup", None, Some(json!({"company_code": "PTC", "company_name": "PETRA Trade Corporation", "bin": "000123456-0101", "admin_email": "owner@example.com", "admin_password": "Str0ngPassw0rd", "admin_name": "Owner"}))).await;
     assert_eq!(s, 201, "setup failed: {b}");
     t.company = b["data"]["company_id"].as_str().unwrap().to_string();
     t.token = t.login("owner@example.com", "Str0ngPassw0rd").await;

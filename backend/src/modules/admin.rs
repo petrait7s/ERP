@@ -386,8 +386,8 @@ async fn meta(State(st): State<AppState>, _user: AuthUser) -> AppResult<Json<Val
 pub fn api() -> Api {
     let a = Api::new("Authentication")
         .post("/setup", PUBLIC, "First-run setup: create the first company and its owner", setup)
-        .body(r#"{"company_code":"MTC","company_name":"Meghna Trade Corporation","company_name_bn":"মেঘনা ট্রেড কর্পোরেশন","bin":"000123456-0101","tin":"123456789012","address":"Motijheel C/A, Dhaka","admin_email":"owner@example.com","admin_password":"Str0ngPassw0rd","admin_name":"Business Owner"}"#)
-        .post("/auth/login", PUBLIC, "Sign in", login).body(r#"{"email":"owner@example.com","password":"Str0ngPassw0rd","company_code":"MTC"}"#)
+        .body(r#"{"company_code":"PTC","company_name":"PETRA Trade Corporation","company_name_bn":"পেট্রা ট্রেড কর্পোরেশন","bin":"000123456-0101","tin":"123456789012","address":"Motijheel C/A, Dhaka","admin_email":"owner@example.com","admin_password":"Str0ngPassw0rd","admin_name":"Business Owner"}"#)
+        .post("/auth/login", PUBLIC, "Sign in", login).body(r#"{"email":"owner@example.com","password":"Str0ngPassw0rd","company_code":"PTC"}"#)
         .post("/auth/refresh", PUBLIC, "Exchange a refresh token for a new session (single use)", refresh).body(r#"{"refresh_token":"<token>"}"#)
         .post("/auth/logout", AUTH, "Sign out and revoke the refresh token", logout).body(r#"{"refresh_token":"<token>"}"#)
         .post("/auth/switch-company", AUTH, "Start a session in another company you belong to", switch_company).body(r#"{"company_id":"<uuid>"}"#)
@@ -396,7 +396,7 @@ pub fn api() -> Api {
         .get("/meta", AUTH, "Lookups for forms: currencies, enums, permission catalogue", meta);
     let b = Api::new("Administration")
         .get("/companies", AUTH, "Companies you belong to", my_companies)
-        .post("/companies", AUTH, "Add a company (system administrator only)", create_company).body(r#"{"code":"MTC2","name":"Meghna Distribution Ltd","bin":"000987654-0101"}"#)
+        .post("/companies", AUTH, "Add a company (system administrator only)", create_company).body(r#"{"code":"PTC2","name":"PETRA Distribution Ltd","bin":"000987654-0101"}"#)
         .get("/company", AUTH, "Current company profile", get_company)
         .put("/company", "admin.write", "Update company profile", update_company).body(r#"{"address":"Level 8, Motijheel C/A, Dhaka","irc_no":"BA-0123456"}"#)
         .get("/users", "admin.read", "Users of this company", list_users).query("page,per_page,q,role")

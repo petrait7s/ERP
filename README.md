@@ -27,7 +27,7 @@ cargo run --release                       # http://localhost:8080 (migrations ru
 ```
 
 ```bash
-# optional: load a realistic demo company (owner@meghna.example / Demo@12345)
+# optional: load a realistic demo company (owner@petra.example / Demo@12345)
 python3 backend/scripts/seed_demo.py http://localhost:8080
 ```
 
