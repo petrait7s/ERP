@@ -91,12 +91,9 @@ jobs:
           name: demo-assets
           path: assets
       - name: Fetch PostgreSQL 16 binaries
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
-          TAG=$(gh api repos/theseus-rs/postgresql-binaries/releases --paginate -q '.[].tag_name' | grep '^16\.' | sort -V | tail -1)
-          echo "PostgreSQL $TAG"
-          gh release download "$TAG" -R theseus-rs/postgresql-binaries -p "postgresql-${TAG}-x86_64-unknown-linux-gnu.tar.gz" -O pg.tar.gz
+          V=16.9.0
+          curl -fSL --retry 5 --retry-delay 3 -o pg.tar.gz "https://github.com/theseus-rs/postgresql-binaries/releases/download/$V/postgresql-$V-x86_64-unknown-linux-gnu.tar.gz"
           mkdir pgsrc && tar -xzf pg.tar.gz -C pgsrc --strip-components=1
           test -x pgsrc/bin/initdb
       - name: Build launcher
@@ -154,15 +151,11 @@ jobs:
           name: demo-assets
           path: assets
       - name: Fetch PostgreSQL 16 binaries
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
-          TAG=$(gh api repos/theseus-rs/postgresql-binaries/releases --paginate -q '.[].tag_name' | grep '^16\.' | sort -V | tail -1)
-          echo "PostgreSQL $TAG"
-          gh release download "$TAG" -R theseus-rs/postgresql-binaries -p "postgresql-${TAG}-x86_64-pc-windows-msvc.zip" -O pg.zip
-          mkdir pgsrc && 7z x pg.zip -opgtmp -y > /dev/null
-          # the archive has one top-level folder
-          inner=$(ls pgtmp | head -1); if [ -d "pgtmp/$inner/bin" ]; then mv "pgtmp/$inner"/* pgsrc/; else mv pgtmp/* pgsrc/; fi
+          V=16.9.0
+          curl -fSL --retry 5 --retry-delay 3 -o pg.zip "https://github.com/theseus-rs/postgresql-binaries/releases/download/$V/postgresql-$V-x86_64-pc-windows-msvc.zip"
+          7z x pg.zip -opgtmp -y > /dev/null
+          mkdir pgsrc && mv pgtmp/postgresql-$V-x86_64-pc-windows-msvc/* pgsrc/
           test -f pgsrc/bin/initdb.exe
       - name: Build launcher
         working-directory: demo
