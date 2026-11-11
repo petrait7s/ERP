@@ -25,6 +25,14 @@ fn exe(base: &Path, name: &str) -> PathBuf {
 }
 
 fn run(cmd: &mut Command, what: &str) {
+    // WEFT_VERBOSE=1 (used by the build pipeline) streams each step's output live instead of capturing it.
+    if std::env::var_os("WEFT_VERBOSE").is_some() {
+        println!("[step] {what}");
+        let st = cmd.stdin(Stdio::null()).status().unwrap_or_else(|e| die(&format!("{what}: {e}")));
+        if !st.success() { die(&format!("{what} failed ({st})")); }
+        println!("[done] {what}");
+        return;
+    }
     let out = cmd.stdin(Stdio::null()).output().unwrap_or_else(|e| die(&format!("{what}: {e}")));
     if !out.status.success() {
         die(&format!("{what} failed:\n{}{}", String::from_utf8_lossy(&out.stdout), String::from_utf8_lossy(&out.stderr)));

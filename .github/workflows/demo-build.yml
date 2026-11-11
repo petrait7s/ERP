@@ -131,10 +131,10 @@ jobs:
       - name: Smoke test (starts the AppImage, signs in, loads a screen)
         run: |
           chmod +x out/WEFT-ERP-Demo-x86_64.AppImage
-          export WEFT_NO_BROWSER=1 HOME=$RUNNER_TEMP/home; mkdir -p $HOME
+          export WEFT_NO_BROWSER=1 WEFT_VERBOSE=1 HOME=$RUNNER_TEMP/home; mkdir -p $HOME
           out/WEFT-ERP-Demo-x86_64.AppImage --appimage-extract-and-run > run.log 2>&1 &
           for i in $(seq 1 120); do curl -fsS http://127.0.0.1:8080/health >/dev/null 2>&1 && break; sleep 1; done
-          cat run.log
+          cat run.log; tail -30 $HOME/.local/share/WEFT-ERP-Demo/postgres.log || true
           TOKEN=$(curl -fsS -X POST http://127.0.0.1:8080/api/v1/auth/login -H 'Content-Type: application/json' \
             -d '{"email":"owner@petra.example","password":"Demo@12345"}' | python3 -c 'import sys,json;d=json.load(sys.stdin);print(d.get("data",d).get("access_token",""))')
           test -n "$TOKEN"
@@ -182,10 +182,10 @@ jobs:
           printf 'WEFT ERP demo\r\n\r\nDouble-click WEFT-ERP-Demo.exe. Your browser opens the app.\r\nSign in: owner@petra.example / Demo@12345\r\nClose the black window to stop. Run with --reset to restore the sample data.\r\n' > stage/READ-ME.txt
       - name: Smoke test (starts the program, signs in)
         run: |
-          export WEFT_NO_BROWSER=1
+          export WEFT_NO_BROWSER=1 WEFT_VERBOSE=1
           stage/WEFT-ERP-Demo.exe > run.log 2>&1 &
-          for i in $(seq 1 180); do curl -fsS http://127.0.0.1:8080/health >/dev/null 2>&1 && break; sleep 1; done
-          cat run.log
+          for i in $(seq 1 120); do curl -fsS http://127.0.0.1:8080/health >/dev/null 2>&1 && break; sleep 1; done
+          cat run.log; tail -30 "$LOCALAPPDATA/WEFT-ERP-Demo/postgres.log" || true; tasklist | grep -i -E 'WEFT|postgres|initdb' || true
           curl -fsS -X POST http://127.0.0.1:8080/api/v1/auth/login -H 'Content-Type: application/json' \
             -d '{"email":"owner@petra.example","password":"Demo@12345"}' | grep -q access_token
           taskkill //F //IM WEFT-ERP-Demo.exe || true
