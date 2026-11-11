@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=WEFT ERP Demo
+Comment=Import ERP client demo with sample data
+Exec=WEFT-ERP-Demo
+Icon=weft-erp-demo
+Categories=Office;Finance;
+Terminal=true

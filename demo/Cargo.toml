@@ -1,0 +1,24 @@
+[package]
+name = "weft-demo"
+version = "1.0.0"
+edition = "2021"
+description = "One-click client demo: embedded PostgreSQL + WEFT ERP + web app, preloaded with sample data"
+
+[[bin]]
+name = "WEFT-ERP-Demo"
+path = "src/main.rs"
+
+[dependencies]
+weft-erp = { path = "../backend" }
+tokio = { version = "1", features = ["full"] }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "postgres", "migrate"] }
+webbrowser = "1"
+dirs = "5"
+rand = "0.8"
+hex = "0.4"
+axum = "0.7"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+strip = true
