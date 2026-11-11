@@ -85,7 +85,7 @@ static INV_DOC: DocCfg = DocCfg { endpoint: "/sales-invoices", list_route: "/sal
     let show = RwSignal::new(false);
     view! { <div class="page"><PageHead title="" subtitle=""><button class="btn" on:click=move |_| show.set(true)><Icon name="print" size=16/>"Print Mushak 6.3"</button></PageHead></div>
         <div class="page" style="padding-top:0"><DocPage cfg=&INV_DOC id=id/></div>
-        {move || show.get().then(|| view! { <MushakDialog id=id2.clone() on_close=Callback::new(move |_| show.set(false))/> })} }
+        {move || show.get().then(|| view! { <MushakDialog id=id2.clone() on_close=closer(move || show.set(false))/> })} }
 }
 #[component]
 fn MushakDialog(id: String, on_close: Callback<()>) -> impl IntoView {
@@ -115,7 +115,7 @@ pub fn NewReceipt() -> impl IntoView {
     let submit = move |_| { if st.busy.get_untracked() { return; } st.busy.set(true); st.err.set(None);
         let mut body = payload(F, &st); let a: Vec<Value> = invs.get_untracked().iter().zip(alloc.get_untracked()).filter(|(_, x)| x.parse::<f64>().map(|v| v > 0.0).unwrap_or(false)).map(|(i, x)| json!({"invoice_id": i["id"], "amount": x})).collect();
         if let Value::Object(m) = &mut body { m.insert("allocations".into(), json!(a)); } let nav = nav.clone();
-        leptos::task::spawn_local(async move { let r = api::post("/customer-receipts", body).await; st.busy.set(false); match r { Ok(_) => { state::ok("Receipt recorded"); state::refresh(); nav("/sales", Default::default()); } Err(e) => st.err.set(Some(e)) } }); };
+        leptos::task::spawn_local(async move { let r = api::post("/customer-receipts", body).await; st.done(); match r { Ok(_) => { state::ok("Receipt recorded"); state::refresh(); nav("/sales", Default::default()); } Err(e) => st.fail(e) } }); };
     view! { <div class="page"><PageHead title="Record a receipt" subtitle="Apply the payment to invoices, oldest first. Anything left over stays as the customer's advance." crumbs=vec![(t("Sales & Customers"), "/sales".to_string())]/>
         <div class="grid" style="max-width:1100px"><Card><FormFields fields=F.to_vec() st=st/></Card>
         {move || (!invs.get().is_empty()).then(|| view! { <Card title="Apply to invoices" right=ViewFn::from(move || view! { <button class="btn sm" on:click=auto>"Auto-apply, oldest first"</button> })><div class="tbl-wrap"><table><thead><tr><th>"Invoice"</th><th>"Date"</th><th>"Due"</th><th class="r">"Balance"</th><th class="r">"Apply"</th></tr></thead><tbody>
@@ -132,7 +132,7 @@ pub fn NewReturn() -> impl IntoView {
     let submit = move |_| { if st.busy.get_untracked() { return; } st.busy.set(true); st.err.set(None); let mut body = payload(F, &st); let d = doc.get_untracked().unwrap_or(Value::Null);
         let lines: Vec<Value> = d["lines"].as_array().cloned().unwrap_or_default().iter().zip(qtys.get_untracked()).filter(|(_, q)| q.parse::<f64>().map(|x| x > 0.0).unwrap_or(false)).map(|(l, q)| json!({"invoice_line_id": l["id"], "qty": q})).collect();
         if let Value::Object(m) = &mut body { m.insert("lines".into(), json!(lines)); } let nav = nav.clone();
-        leptos::task::spawn_local(async move { let r = api::post("/sales-returns", body).await; st.busy.set(false); match r { Ok(_) => { state::ok("Credit note issued"); state::refresh(); nav("/sales", Default::default()); } Err(e) => st.err.set(Some(e)) } }); };
+        leptos::task::spawn_local(async move { let r = api::post("/sales-returns", body).await; st.done(); match r { Ok(_) => { state::ok("Credit note issued"); state::refresh(); nav("/sales", Default::default()); } Err(e) => st.fail(e) } }); };
     view! { <div class="page"><PageHead title="Customer return" subtitle="Choose the invoice, then how much of each item came back. A credit note (Mushak 6.7) is issued and stock goes back at its original cost." crumbs=vec![(t("Sales & Customers"), "/sales".to_string())]/>
         <div class="grid" style="max-width:1100px"><Card><FormFields fields=F.to_vec() st=st/></Card>
         {move || doc.get().map(|d| view! { <Card title="Items returned"><div class="tbl-wrap"><table><thead><tr><th>"Item"</th><th class="r">"Invoiced"</th><th class="r">"Already returned"</th><th class="r">"Returning now"</th></tr></thead><tbody>

@@ -47,6 +47,15 @@ pub fn Icon(name: &'static str, #[prop(optional)] size: u32) -> impl IntoView {
     view! { <svg viewBox="0 0 24 24" width=s height=s inner_html=icon_paths(name)></svg> }
 }
 
+/// A close/cancel callback that stays valid even if the dialog that asked for it is torn down first
+/// (an async save may finish after its dialog has already been removed from the page).
+pub fn closer(f: impl Fn() + Send + Sync + 'static) -> Callback<()> {
+    let root = Owner::new_root(None);
+    let cb = root.with(|| Callback::new(move |_| f()));
+    std::mem::forget(root);
+    cb
+}
+
 // ---------------- layout ----------------
 #[component]
 pub fn PageHead(#[prop(into)] title: String, #[prop(optional, into)] subtitle: String, #[prop(optional)] crumbs: Option<Vec<(String, String)>>, #[prop(optional)] children: Option<Children>) -> impl IntoView {
@@ -210,6 +219,9 @@ impl FormState {
         }
         FormState { vals: RwSignal::new(m), err: RwSignal::new(None), busy: RwSignal::new(false) }
     }
+    /// Safe even when the dialog that owns this form has already closed.
+    pub fn done(&self) { let _ = self.busy.try_set(false); }
+    pub fn fail(&self, e: api::ApiError) { let _ = self.err.try_set(Some(e)); }
     pub fn get(&self, name: &str) -> String { self.vals.with(|m| m.get(name).and_then(|v| v.as_str()).unwrap_or("").to_string()) }
     pub fn set(&self, name: &str, v: String) { self.vals.update(|m| { m.insert(name.into(), json!(v)); }); }
 }
@@ -339,7 +351,8 @@ pub fn LinesEditor(cols: Vec<FF>, rows: RwSignal<Vec<Map<String, Value>>>, #[pro
 }
 /// Convert editor rows to API line objects. Whole numbers become numbers, decimals stay exact strings.
 pub fn lines_payload(cols: &[FF], rows: &[Map<String, Value>]) -> Vec<Value> {
-    rows.iter().map(|r| { let mut o = Map::new(); for c in cols { let raw = r.get(c.name).and_then(|v| v.as_str()).unwrap_or("").trim(); if raw.is_empty() { continue; } o.insert(c.name.into(), json!(raw)); } Value::Object(o) }).collect()
+    // Untouched rows are ignored, so a spare blank line never blocks saving.
+    rows.iter().map(|r| { let mut o = Map::new(); for c in cols { let raw = r.get(c.name).and_then(|v| v.as_str()).unwrap_or("").trim(); if raw.is_empty() { continue; } o.insert(c.name.into(), json!(raw)); } Value::Object(o) }).filter(|o| o.as_object().map(|m| !m.is_empty()).unwrap_or(false)).collect()
 }
 
 /// Ask before doing something that cannot be undone.
@@ -348,7 +361,7 @@ pub fn Confirm(#[prop(into)] title: String, #[prop(into)] text: String, #[prop(i
     let action2 = action.clone();
     view! { <Modal title=title on_close=on_close footer=footer(move || { let a = action2.clone(); view! {
         <button class="btn" on:click=move |_| on_close.run(())>{t("Cancel")}</button>
-        <button class=if danger { "btn danger" } else { "btn primary" } on:click=move |_| { on_close.run(()); on_yes.run(()) }>{a}</button> } .into_any() })>
+        <button class=if danger { "btn danger" } else { "btn primary" } on:click=move |_| { on_yes.run(()); on_close.run(()) }>{a}</button> } .into_any() })>
         <p class="mut" style="padding:6px 0 14px">{text}</p></Modal> }
 }
 

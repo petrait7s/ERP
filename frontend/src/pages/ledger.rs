@@ -82,7 +82,7 @@ pub fn NewJournal() -> impl IntoView {
     let submit = move |_| { if st.busy.get_untracked() { return; } st.busy.set(true); st.err.set(None); let mut body = payload(H, &st);
         let lines: Vec<Value> = rows.get_untracked().iter().filter(|m| m.get("account_id").and_then(|v| v.as_str()).map(|s| !s.is_empty()).unwrap_or(false)).map(|m| { let mut o = Map::new(); for k in ["account_id", "memo"] { if let Some(v) = m.get(k).and_then(|v| v.as_str()).filter(|s| !s.is_empty()) { o.insert(k.into(), json!(v)); } } for k in ["debit", "credit"] { if let Some(v) = m.get(k).and_then(|v| v.as_str()).filter(|s| !s.is_empty()) { o.insert(k.into(), json!(v)); } } Value::Object(o) }).collect();
         if let Value::Object(m) = &mut body { m.insert("lines".into(), json!(lines)); } let nav = nav.clone();
-        leptos::task::spawn_local(async move { let r = api::post("/journals", body).await; st.busy.set(false); match r { Ok(v) => { state::ok("Journal posted"); nav(&format!("/journals/{}", v["data"]["id"].as_str().unwrap_or("")), Default::default()); } Err(e) => st.err.set(Some(e)) } }); };
+        leptos::task::spawn_local(async move { let r = api::post("/journals", body).await; st.done(); match r { Ok(v) => { state::ok("Journal posted"); nav(&format!("/journals/{}", v["data"]["id"].as_str().unwrap_or("")), Default::default()); } Err(e) => st.fail(e) } }); };
     view! { <div class="page"><PageHead title="Post a journal" subtitle="For adjustments the system does not make by itself. Debits must equal credits." crumbs=vec![(t("Ledger Studio"), "/ledger".to_string())]/>
         <div class="grid" style="max-width:1100px"><Card><FormFields fields=H.to_vec() st=st/></Card>
         <Card title="Lines"><LinesEditor cols=L.to_vec() rows=rows err=st.err/>

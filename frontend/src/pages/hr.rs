@@ -82,14 +82,14 @@ fn LeaveTab() -> impl IntoView {
 fn PayrollTab() -> impl IntoView {
     let dialog = RwSignal::new(false);
     view! { <div class="row" style="margin-bottom:14px">{move || state::can("payroll.write").then(|| view! { <button class="btn primary sp" on:click=move |_| dialog.set(true)><Icon name="plus" size=16/>"Prepare payroll"</button> })}</div>
-        <ListPage cfg=&PAYROLL headless=true/>{move || dialog.get().then(|| view! { <NewRunDialog on_close=Callback::new(move |_| dialog.set(false))/> })} }
+        <ListPage cfg=&PAYROLL headless=true/>{move || dialog.get().then(|| view! { <NewRunDialog on_close=closer(move || dialog.set(false))/> })} }
 }
 #[component]
 fn NewRunDialog(on_close: Callback<()>) -> impl IntoView {
     const F: &[FF] = &[ff("year", "Year", FK::Int).req(), ff("month", "Month (1 to 12)", FK::Int).req(), ff("working_days", "Working days", FK::Int).help("Leave empty to use the company policy")];
     let now = js_sys::Date::new_0(); let st = FormState::new(F, None); st.set("year", now.get_full_year().to_string()); st.set("month", (now.get_month() + 1).to_string()); let nav = use_navigate();
     let go = move |_| { st.busy.set(true); st.err.set(None); let b = payload(F, &st); let nav = nav.clone();
-        leptos::task::spawn_local(async move { let r = api::post("/payroll-runs", b).await; st.busy.set(false); match r { Ok(v) => { state::ok("Payroll prepared"); on_close.run(()); nav(&format!("/payroll-runs/{}", v["data"]["id"].as_str().unwrap_or("")), Default::default()); } Err(e) => st.err.set(Some(e)) } }); };
+        leptos::task::spawn_local(async move { let r = api::post("/payroll-runs", b).await; st.done(); match r { Ok(v) => { state::ok("Payroll prepared"); on_close.run(()); nav(&format!("/payroll-runs/{}", v["data"]["id"].as_str().unwrap_or("")), Default::default()); } Err(e) => st.fail(e) } }); };
     view! { <Modal title="Prepare payroll" on_close=on_close footer=footer(move || view! { <button class="btn" on:click=move |_| on_close.run(())>{t("Cancel")}</button><button class="btn primary" disabled=move || st.busy.get() on:click=go.clone()>"Prepare"</button> }.into_any())><p class="mut small" style="margin-bottom:14px">"Pay is worked out from each person's salary, absence in the attendance records, provident fund and tax."</p><FormFields fields=F.to_vec() st=st/><FormError st=st/></Modal> }
 }
 

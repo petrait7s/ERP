@@ -15,6 +15,22 @@ use state::AppState;
 use std::sync::Arc;
 use tower_http::{cors::{AllowOrigin, CorsLayer}, limit::RequestBodyLimitLayer, set_header::SetResponseHeaderLayer, trace::TraceLayer};
 
+/// Extractor rejections (malformed JSON, bad ids) come back as plain text; turn them into the API's error format.
+async fn uniform_errors(resp: axum::response::Response) -> axum::response::Response {
+    use axum::response::IntoResponse;
+    let status = resp.status();
+    let is_text = resp.headers().get(header::CONTENT_TYPE).and_then(|v| v.to_str().ok()).map(|v| v.starts_with("text/plain")).unwrap_or(false);
+    if status.is_client_error() && is_text {
+        let (code, msg) = match status.as_u16() {
+            413 => ("too_large", "That is too large to send"),
+            415 => ("bad_request", "The request must be JSON"),
+            _ => ("bad_request", "Some values are missing or not valid. Check the form and try again."),
+        };
+        return (status, Json(json!({"error": {"code": code, "message": msg, "details": []}}))).into_response();
+    }
+    resp
+}
+
 pub static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("./migrations");
 
 /// Every module's routes with their documentation.
@@ -57,12 +73,20 @@ pub fn build_app(state: AppState) -> Router {
     if let Some(dir) = &state.cfg.static_dir {
         // The web app is a single-page application: unknown paths fall back to index.html.
         let index = std::path::Path::new(dir).join("index.html");
-        app = app.fallback_service(tower_http::services::ServeDir::new(dir).fallback(tower_http::services::ServeFile::new(index)));
+        // Static files are compressed and revalidated on each load (cheap 304s), so a new release is picked up at once.
+        let files = tower::ServiceBuilder::new()
+            .layer(tower_http::compression::CompressionLayer::new())
+            .layer(SetResponseHeaderLayer::overriding(header::CACHE_CONTROL, HeaderValue::from_static("no-cache")))
+            .service(tower_http::services::ServeDir::new(dir).fallback(tower_http::services::ServeFile::new(index)));
+        app = app.fallback_service(files);
     }
     app
         .layer(RequestBodyLimitLayer::new(2 * 1024 * 1024))
+        .layer(middleware::map_response(uniform_errors))
         .layer(SetResponseHeaderLayer::if_not_present(header::X_CONTENT_TYPE_OPTIONS, HeaderValue::from_static("nosniff")))
         .layer(SetResponseHeaderLayer::if_not_present(header::X_FRAME_OPTIONS, HeaderValue::from_static("DENY")))
+        .layer(SetResponseHeaderLayer::if_not_present(header::REFERRER_POLICY, HeaderValue::from_static("no-referrer")))
+        .layer(SetResponseHeaderLayer::if_not_present(header::CONTENT_SECURITY_POLICY, HeaderValue::from_static("frame-ancestors 'none'; base-uri 'self'; object-src 'none'")))
         .layer(SetResponseHeaderLayer::if_not_present(header::CACHE_CONTROL, HeaderValue::from_static("no-store")))
         .layer(cors)
         .layer(TraceLayer::new_for_http())

@@ -48,13 +48,13 @@ fn Deposits() -> impl IntoView {
     view! { <div class="grid g3">{move || match res.get() { None => view! { <Loading/> }.into_any(), Some(Err(e)) => view! { <ErrorBox err=e/> }.into_any(), Some(Ok(v)) => { let d = v["data"].clone();
         [("vat", "VAT payable (after return)", "vat_payable"), ("sd", "Supplementary duty", "supplementary_duty"), ("vds", "VDS withheld from suppliers", "vds"), ("tds", "Tax withheld (TDS)", "tds"), ("pf", "Provident fund", "provident_fund")].into_iter().map(|(kind, label, key)| { let amt = fmt::num(&d[key]);
             view! { <div class="card"><div class="lbl dim small">{label}</div><div class="val num" style="font-size:24px;font-weight:700;margin:6px 0 12px">{fmt::money_f(amt)}</div>{(amt > 0.0 && state::can("tax.write")).then(|| view! { <button class="btn sm" on:click=move |_| dialog.set(Some((kind, label)))>"Record deposit"</button> })}</div> } }).collect_view().into_any() } }}
-        {move || dialog.get().map(|(kind, label)| view! { <DepositDialog kind=kind label=label on_close=Callback::new(move |_| dialog.set(None))/> })}</div> }
+        {move || dialog.get().map(|(kind, label)| view! { <DepositDialog kind=kind label=label on_close=closer(move || dialog.set(None))/> })}</div> }
 }
 #[component]
 fn DepositDialog(kind: &'static str, label: &'static str, on_close: Callback<()>) -> impl IntoView {
     const F: &[FF] = &[ff("amount", "Amount (Tk)", FK::Dec).req(), ff("bank_account_id", "Paid from", FK::Lookup("/bank-accounts?currency=BDT", &["name"])).req(), ff("deposit_date", "Date", FK::Date).def("today"), ff("challan_no", "Treasury challan no.", FK::Text)];
     let st = FormState::new(F, None);
     let save = move |_| { st.busy.set(true); st.err.set(None); let mut b = payload(F, &st); if let Value::Object(m) = &mut b { m.insert("kind".into(), json!(kind)); }
-        leptos::task::spawn_local(async move { let r = api::post("/tax/deposits", b).await; st.busy.set(false); match r { Ok(_) => { state::ok("Deposit recorded"); state::refresh(); on_close.run(()); } Err(e) => st.err.set(Some(e)) } }); };
+        leptos::task::spawn_local(async move { let r = api::post("/tax/deposits", b).await; st.done(); match r { Ok(_) => { state::ok("Deposit recorded"); state::refresh(); on_close.run(()); } Err(e) => st.fail(e) } }); };
     view! { <Modal title=format!("Deposit: {label}") on_close=on_close footer=footer(move || view! { <button class="btn" on:click=move |_| on_close.run(())>{t("Cancel")}</button><button class="btn primary" disabled=move || st.busy.get() on:click=save>"Record deposit"</button> }.into_any())><FormFields fields=F.to_vec() st=st/><FormError st=st/></Modal> }
 }

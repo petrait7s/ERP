@@ -25,8 +25,8 @@ pub fn NewDocPage(cfg: &'static NewDoc) -> impl IntoView {
         let nav = nav.clone();
         leptos::task::spawn_local(async move {
             let r = api::post(cfg.endpoint, body).await;
-            st.busy.set(false);
-            match r { Ok(v) => { state::ok(cfg.done); state::refresh(); let rid = v["data"]["id"].as_str().unwrap_or("").to_string(); nav(&cfg.goto.replace("{rid}", &rid), Default::default()); } Err(e) => st.err.set(Some(e)) }
+            st.done();
+            match r { Ok(v) => { state::ok(cfg.done); state::refresh(); let rid = v["data"]["id"].as_str().unwrap_or("").to_string(); nav(&cfg.goto.replace("{rid}", &rid), Default::default()); } Err(e) => st.fail(e) }
         });
     };
     view! {

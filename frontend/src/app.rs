@@ -31,6 +31,11 @@ const NAV: &[NavGroup] = &[
         NavItem { href: "/admin", label: "Administration", icon: "gear", perm: "admin.read" },
     ] },
 ];
+/// The permission a screen needs, found from the navigation table (detail pages inherit their module's).
+fn page_perm(path: &str) -> &'static str {
+    for g in NAV { for i in g.items { if i.href != "/" && (path == i.href || path.starts_with(&format!("{}/", i.href)) || related(i.href, path)) { return i.perm; } } }
+    "auth"
+}
 fn allowed(perm: &str) -> bool { if perm == "reports" { state::can("finance.read") || state::can("sales.read") || state::can("inventory.read") } else { state::can(perm) } }
 
 pub async fn load_session() -> bool {
@@ -61,7 +66,7 @@ pub fn App() -> impl IntoView {
     });
     view! {
         <div class="ambient"><i></i><i></i><i></i></div>
-        {move || if !booted.get() { ().into_any() } else if app.session.get().is_none() { view! { <Login/> }.into_any() } else { view! { <Shell/> }.into_any() }}
+        {move || if !booted.get() { ().into_any() } else if app.session.get().is_none() { view! { <Login/> }.into_any() } else { let _ = app.bn.get(); view! { <Shell/> }.into_any() }}
         <Toasts/>
     }
 }
@@ -128,7 +133,19 @@ fn Shell() -> impl IntoView {
                 <Sidebar/>
                 {move || app.nav_open.get().then(|| view! { <div class="scrim" on:click=move |_| app.nav_open.set(false)></div> })}
                 <div class="main"><Topbar/>
-                    <main>
+                    <main><MainArea/></main>
+                </div>
+            </div>
+            <SearchPalette/>
+        </Router>
+    }
+}
+
+#[component]
+fn MainArea() -> impl IntoView {
+    let loc = use_location();
+    view! {
+                        <Show when=move || allowed(page_perm(&loc.pathname.get())) fallback=|| view! { <div class="page"><div class="card"><Empty title="This area is not part of your role" hint="Ask an administrator if you need access."/><div style="text-align:center;padding-bottom:20px"><a class="btn" href="/">"Back to dashboard"</a></div></div></div> }>
                         <Routes fallback=|| view! { <div class="page"><Empty title="Page not found" hint="Use the menu to find what you need."/></div> }>
                             <Route path=path!("/") view=pages::dashboard::Dashboard/>
                             <Route path=path!("/imports") view=pages::imports::Imports/>
@@ -176,12 +193,8 @@ fn Shell() -> impl IntoView {
                             <Route path=path!("/reports") view=pages::reports::Reports/>
                             <Route path=path!("/admin") view=pages::admin::Admin/>
                         </Routes>
-                    </main>
-                </div>
-            </div>
-            <SearchPalette/>
-        </Router>
-    }
+                        </Show>
+                    }
 }
 
 #[component]
@@ -278,6 +291,8 @@ fn SearchPalette() -> impl IntoView {
         "Enter" => { if let Some(r) = results.get_untracked().get(sel.get_untracked()).cloned() { go2(r); } }
         _ => {}
     };
+    let input_ref = NodeRef::<leptos::html::Input>::new();
+    Effect::new(move |_| { if let Some(el) = input_ref.get() { let _ = el.focus(); } });
     let on_input = StoredValue::new_local(on_input);
     let on_key = StoredValue::new_local(on_key);
     let go = StoredValue::new_local(go);
@@ -299,7 +314,7 @@ fn SearchPalette() -> impl IntoView {
         {move || app.search_open.get().then(|| view! {
             <div class="overlay" on:mousedown=move |_| app.search_open.set(false)>
                 <div class="search-pal" on:mousedown=|e| e.stop_propagation()>
-                    <input autofocus placeholder=t("Search everything…") prop:value=move || q.get() on:input=move |e| on_input.with_value(|f| f(e)) on:keydown=move |e| on_key.with_value(|f| f(e))/>
+                    <input node_ref=input_ref placeholder=t("Search everything…") prop:value=move || q.get() on:input=move |e| on_input.with_value(|f| f(e)) on:keydown=move |e| on_key.with_value(|f| f(e))/>
                     <div class="res">{list_view}</div>
                 </div>
             </div>

@@ -88,14 +88,14 @@ pub fn ListPage(cfg: &'static ListCfg, #[prop(optional)] headless: bool, #[prop(
                         {if rows.is_empty() { view! { <Empty title=t("Nothing here yet") hint=cfg.empty_hint/> }.into_any() } else { table(cfg.cols, rows, if clickable { Some(Callback::new(move |r| open(r))) } else { None }) }}
                         <div class="pager no-print"><span>{fmt::digits(format!("{total} {}", if total == 1 { "record" } else { "records" }))}</span>
                             <span class="sp"></span>
-                            <button class="btn sm" disabled=move || page.get() <= 1 on:click=move |_| page.update(|p| *p -= 1)>"‹"</button>
+                            <button class="btn sm" disabled={move || page.get() <= 1} on:click=move |_| page.update(|p| *p -= 1)>"‹"</button>
                             <span>{move || fmt::digits(format!("{} / {}", page.get(), pages))}</span>
-                            <button class="btn sm" disabled=move || page.get() >= pages on:click=move |_| page.update(|p| *p += 1)>"›"</button></div>
+                            <button class="btn sm" disabled={move || page.get() >= pages} on:click=move |_| page.update(|p| *p += 1)>"›"</button></div>
                     }.into_any()
                 }
             }}
         </div>
-        {move || dialog.get().map(|row| view! { <RecordDialog cfg=cfg row=row on_close=Callback::new(move |_| dialog.set(None))/> })}
+        {move || dialog.get().map(|row| view! { <RecordDialog cfg=cfg row=row on_close=closer(move || dialog.set(None))/> })}
     }
 }
 
@@ -112,8 +112,8 @@ fn RecordDialog(cfg: &'static ListCfg, row: Option<Value>, on_close: Callback<()
         let body = payload_with_bools(cfg.fields, &st); let id = id2.clone();
         leptos::task::spawn_local(async move {
             let r = if editing { api::put(&format!("{}/{}", cfg.endpoint, id), body).await } else { api::post(cfg.endpoint, body).await };
-            st.busy.set(false);
-            match r { Ok(_) => { state::ok(if editing { "Saved" } else { "Created" }); state::refresh(); on_close.run(()); } Err(e) => st.err.set(Some(e)) }
+            st.done();
+            match r { Ok(_) => { state::ok(if editing { "Saved" } else { "Created" }); state::refresh(); on_close.run(()); } Err(e) => st.fail(e) }
         });
     };
     let del = { let id = id.clone(); move |_| {
@@ -128,12 +128,13 @@ fn RecordDialog(cfg: &'static ListCfg, row: Option<Value>, on_close: Callback<()
             <button class="btn primary" on:click=save.clone() disabled=move || st.busy.get()>{move || if st.busy.get() { view! { <Spinner/> }.into_any() } else { view! { {t("Save")} }.into_any() }}</button> }.into_any())>
             <FormFields fields=cfg.fields.to_vec() st=st/>
             <FormError st=st/>
-            {move || confirm_delete.get().then(|| view! { <Confirm title="Delete this record?" text="This cannot be undone. Records already used in transactions cannot be deleted; mark them inactive instead." action="Delete" danger=true on_close=Callback::new(move |_| confirm_delete.set(false)) on_yes=Callback::new(del.clone())/> })}
+            {move || confirm_delete.get().then(|| view! { <Confirm title="Delete this record?" text="This cannot be undone. Records already used in transactions cannot be deleted; mark them inactive instead." action="Delete" danger=true on_close=closer(move || confirm_delete.set(false)) on_yes=Callback::new(del.clone())/> })}
         </Modal>
     }
 }
 
 // ---------------- document pages ----------------
+type Nav = StoredValue<std::rc::Rc<dyn Fn(&str, leptos_router::NavigateOptions)>, LocalStorage>;
 #[derive(Clone, Copy)]
 pub struct Fact { pub label: &'static str, pub key: &'static str, pub kind: CK }
 pub const fn fact(label: &'static str, key: &'static str, kind: CK) -> Fact { Fact { label, key, kind } }
@@ -200,6 +201,8 @@ pub fn DocPage(cfg: &'static DocCfg, id: String, #[prop(optional)] extra: Option
     let id_s = StoredValue::new(id.clone());
     let res = LocalResource::new(move || { let _ = tick.get(); let url = format!("{}/{}", cfg.endpoint, id_s.get_value()); async move { api::get(&url).await } });
     let acting: RwSignal<Option<DocAction>> = RwSignal::new(None);
+    // Taken here, while the router context is in scope, and handed to the action dialog.
+    let nav: Nav = StoredValue::new_local(std::rc::Rc::new(use_navigate()));
     view! {
         {move || match res.get() {
             None => view! { <Loading/> }.into_any(),
@@ -230,7 +233,7 @@ pub fn DocPage(cfg: &'static DocCfg, id: String, #[prop(optional)] extra: Option
                         }).collect_view()}
                         {approvals_card(&d_appr)}
                     </div>
-                    {move || acting.get().map(|a| view! { <ActionDialog cfg=cfg action=a doc=d.clone() on_close=Callback::new(move |_| acting.set(None))/> })}
+                    {move || acting.get().map(|a| view! { <ActionDialog cfg=cfg action=a doc=d.clone() nav=nav on_close=closer(move || acting.set(None))/> })}
                 }.into_any()
             }
         }}
@@ -261,8 +264,7 @@ fn render_with_row_action(cols: &'static [Col], rows: Vec<Value>, a: RowAction, 
 }
 
 #[component]
-fn ActionDialog(cfg: &'static DocCfg, action: DocAction, doc: Value, on_close: Callback<()>) -> impl IntoView {
-    let nav = StoredValue::new_local(use_navigate());
+fn ActionDialog(cfg: &'static DocCfg, action: DocAction, doc: Value, nav: Nav, on_close: Callback<()>) -> impl IntoView {
     let st = FormState::new(action.fields, None);
     let doc_id = doc["id"].as_str().unwrap_or("").to_string();
     let rows: RwSignal<Vec<(String, String, String, String)>> = RwSignal::new(match action.line_qty { Some(lq) => doc[lq.key].as_array().cloned().unwrap_or_default().iter().filter_map(|l| {
@@ -276,7 +278,7 @@ fn ActionDialog(cfg: &'static DocCfg, action: DocAction, doc: Value, on_close: C
         let mut body = payload_with_bools(action.fields, &st);
         if let Some(lq) = action.line_qty {
             let ls: Vec<Value> = rows.get_untracked().iter().zip(qtys.get_untracked()).filter(|(_, q)| !q.is_empty() && q.parse::<f64>().map(|x| x > 0.0).unwrap_or(false)).map(|(r, q)| json!({ lq.send: r.0, "qty": q })).collect();
-            if ls.is_empty() { st.busy.set(false); st.err.set(Some(api::ApiError { status: 422, code: "business_rule".into(), message: "Enter a quantity for at least one line".into(), fields: vec![] })); return; }
+            if ls.is_empty() { st.done(); st.err.set(Some(api::ApiError { status: 422, code: "business_rule".into(), message: "Enter a quantity for at least one line".into(), fields: vec![] })); return; }
             if let Value::Object(m) = &mut body { m.insert("lines".into(), json!(ls)); }
         }
         if !action.fixed.is_empty() { if let (Value::Object(m), Ok(Value::Object(f))) = (&mut body, serde_json::from_str::<Value>(action.fixed)) { for (k, v) in f { m.insert(k, v); } } }
@@ -286,11 +288,11 @@ fn ActionDialog(cfg: &'static DocCfg, action: DocAction, doc: Value, on_close: C
         let goto = action.goto; let did = doc_id.clone();
         leptos::task::spawn_local(async move {
             let r = api::request(method, &path, if action.method == "DELETE" { None } else { Some(body) }).await;
-            st.busy.set(false);
+            st.done();
             match r {
                 Ok(v) => { state::ok(action.done); state::refresh(); on_close.run(());
                     if !goto.is_empty() { let rid = v["data"]["id"].as_str().unwrap_or("").to_string(); nav.with_value(|n| n(&goto.replace("{id}", &did).replace("{rid}", &rid), Default::default())); } }
-                Err(e) => st.err.set(Some(e)),
+                Err(e) => st.fail(e),
             }
         });
     };

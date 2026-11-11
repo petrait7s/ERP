@@ -21,7 +21,7 @@ pub fn Replenishment() -> impl IntoView {
                 let all2 = all.clone();
                 let rows = move || all2.iter().filter(|r| match filter.get() { "all" => true, f => r["status"] == f }).cloned().collect::<Vec<_>>();
                 let all3 = all.clone();
-                let selected_cbm = Memo::new(move |_| all3.iter().filter(|r| picked.get().contains(r["product_id"].as_str().unwrap_or(""))).map(|r| fmt::num(&r["suggested_cbm"])).sum::<f64>());
+                let selected_cbm = Memo::new(move |_| all3.iter().filter(|r| picked.get().contains(r["product_id"].as_str().unwrap_or(""))).map(|r| fmt::num(&r["suggested_cbm"])).sum::<f64>().max(0.0));
                 let all4 = all.clone();
                 view! {
                     <div class="grid g4"><Kpi label="Overdue" value=fmt::digits(c_over.to_string()) sub="should have been ordered already" tone={if c_over > 0 { "bad" } else { "" }} icon="alert"/><Kpi label="Order now" value=fmt::digits(c_now.to_string()) sub="within the next two weeks" tone={if c_now > 0 { "warn" } else { "" }} icon="cart"/><Kpi label="Comfortable" value=fmt::digits(c_ok.to_string()) sub="no action needed" icon="check"/><Kpi label="Safety stock" value=fmt::digits(format!("{} days", safety as i64)) sub="added to every lead time" icon="shield" tip="Change it in Policy & Approvals"/></div>

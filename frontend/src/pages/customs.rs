@@ -25,7 +25,7 @@ fn DutyCalculator() -> impl IntoView {
     let st = FormState::new(F, None);
     let out: RwSignal<Option<Value>> = RwSignal::new(None);
     let calc = move |_| { st.busy.set(true); st.err.set(None); let body = payload(F, &st);
-        leptos::task::spawn_local(async move { match api::post("/customs/duty-calculator", body).await { Ok(v) => out.set(Some(v["data"].clone())), Err(e) => st.err.set(Some(e)) } st.busy.set(false); }); };
+        leptos::task::spawn_local(async move { match api::post("/customs/duty-calculator", body).await { Ok(v) => out.set(Some(v["data"].clone())), Err(e) => st.fail(e) } st.done(); }); };
     view! { <div class="grid g2" style="align-items:start">
         <Card title="Estimate import duties"><FormFields fields=F.to_vec() st=st/><FormError st=st/><div style="margin-top:16px"><button class="btn primary" disabled=move || st.busy.get() on:click=calc>"Calculate"</button></div>
             <p class="help" style="margin-top:12px">"Assessable value = CIF in Taka + landing charge. SD applies on AV + CD + RD; VAT and AT on AV + CD + RD + SD."</p></Card>

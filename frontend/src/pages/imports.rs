@@ -100,7 +100,7 @@ pub fn NewShipment() -> impl IntoView {
         let conts: Vec<Value> = st.get("containers").split(|c: char| c == ',' || c == '\n').map(str::trim).filter(|s| !s.is_empty()).map(|c| json!({"container_no": c})).collect();
         if let Value::Object(m) = &mut body { m.remove("containers"); m.insert("po_id".into(), json!(po.get_untracked())); m.insert("lines".into(), json!(lines)); m.insert("containers".into(), json!(conts)); }
         let nav = nav.clone();
-        leptos::task::spawn_local(async move { let r = api::post("/shipments", body).await; st.busy.set(false); match r { Ok(v) => { state::ok("Shipment booked"); nav(&format!("/shipments/{}", v["data"]["id"].as_str().unwrap_or("")), Default::default()); } Err(e) => st.err.set(Some(e)) } });
+        leptos::task::spawn_local(async move { let r = api::post("/shipments", body).await; st.done(); match r { Ok(v) => { state::ok("Shipment booked"); nav(&format!("/shipments/{}", v["data"]["id"].as_str().unwrap_or("")), Default::default()); } Err(e) => st.fail(e) } });
     };
     view! { <div class="page"><PageHead title="Book a shipment" subtitle="Record what the supplier has put on board against an approved import order." crumbs=vec![(t("Imports & Voyages"), "/imports".to_string())]/>
         <div class="grid" style="max-width:1100px">

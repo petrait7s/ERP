@@ -52,7 +52,7 @@ pub fn init() -> App {
     app
 }
 pub fn app() -> App { APP.with(|a| *a.get().expect("app state not initialised")) }
-pub fn is_bn() -> bool { APP.with(|a| a.get().map(|x| x.bn.get_untracked()).unwrap_or(false)) }
+pub fn is_bn() -> bool { APP.with(|a| a.get().map(|x| x.bn.get()).unwrap_or(false)) }
 /// Reactive version: reading this in a view re-renders when the language changes.
 pub fn bn_now() -> bool { app().bn.get() }
 
