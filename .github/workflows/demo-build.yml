@@ -12,6 +12,7 @@ on:
   workflow_dispatch:
   push:
     tags: ["v*"]
+    branches: [claude/eloquent-keller-no6lrh, main]
 
 permissions:
   contents: write
