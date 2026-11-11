@@ -3,3 +3,4 @@ target/
 *.log
 dist/
 node_modules/
+weft-erp.zip
