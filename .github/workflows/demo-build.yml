@@ -108,6 +108,15 @@ jobs:
           mkdir -p $A/usr/bin $A/usr/share/weft
           cp demo/target/release/WEFT-ERP-Demo $A/usr/bin/
           cp -r pgsrc $A/usr/share/weft/pg
+          # Bundle every shared library PostgreSQL needs except the C library itself (found by ldd), so the
+          # AppImage does not depend on the host's OpenSSL/ICU/XML versions (Fedora differs from Ubuntu).
+          PGLIB=$A/usr/share/weft/pg/lib
+          for f in $PGLIB/../bin/* $PGLIB/*.so; do
+            ldd "$f" 2>/dev/null | awk '/=> \// {print $3}'
+          done | sort -u | grep -Ev '/(libc|libm|libdl|libpthread|librt|libresolv|libutil|libnsl|ld-linux[^/]*)\.so' | while read -r l; do
+            [ -e "$PGLIB/$(basename "$l")" ] || cp "$(readlink -f "$l")" "$PGLIB/$(basename "$l")"
+          done
+          ls $PGLIB | grep -E 'libssl|libcrypto|libicu|libxml2|libstdc' 
           cp -r assets/web $A/usr/share/weft/web
           cp assets/demo.sql $A/usr/share/weft/demo.sql
           cp demo/packaging/AppRun $A/AppRun

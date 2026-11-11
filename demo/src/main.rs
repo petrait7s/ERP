@@ -39,6 +39,12 @@ fn free_port(preferred: u16) -> u16 {
 #[tokio::main]
 async fn main() {
     let res = resources();
+    // The bundled PostgreSQL ships the shared libraries it needs (OpenSSL, ICU, ...) so it also runs on distributions with other versions.
+    if cfg!(unix) {
+        let lib = res.join("pg/lib");
+        let old = std::env::var("LD_LIBRARY_PATH").unwrap_or_default();
+        std::env::set_var("LD_LIBRARY_PATH", if old.is_empty() { lib.display().to_string() } else { format!("{}:{old}", lib.display()) });
+    }
     let home = dirs::data_local_dir().unwrap_or_else(std::env::temp_dir).join("WEFT-ERP-Demo");
     let data = home.join("pgdata");
     if std::env::args().any(|a| a == "--reset") { let _ = std::fs::remove_dir_all(&home); println!("Demo data cleared."); }
