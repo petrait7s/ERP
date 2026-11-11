@@ -1,0 +1,26 @@
+# One command brings up the database, the API and (after Phase 2) the web app:
+#   JWT_SECRET=$(openssl rand -hex 32) docker compose up --build
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: erp
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-erp_change_me}
+      POSTGRES_DB: erp
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U erp -d erp"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  api:
+    build: ./backend
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      DATABASE_URL: postgres://erp:${POSTGRES_PASSWORD:-erp_change_me}@db:5432/erp
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET to a random string of 32+ characters}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8081}
+    ports: ["8080:8080"]
+volumes:
+  pgdata:

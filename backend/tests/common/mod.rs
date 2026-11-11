@@ -8,7 +8,7 @@ use std::sync::Arc;
 use tower::ServiceExt;
 use weft_erp::{build_app, config::Config, state::AppState, MIGRATOR};
 
-pub struct TestApp { pub app: Router, pub db: PgPool, pub token: String, pub company: String, name: String }
+pub struct TestApp { pub state: AppState, pub app: Router, pub db: PgPool, pub token: String, pub company: String, name: String }
 
 fn admin_url() -> String { std::env::var("TEST_ADMIN_URL").unwrap_or_else(|_| "postgres://erp:erp@localhost:5432/postgres".into()) }
 fn db_url(name: &str) -> String { admin_url().rsplit_once('/').map(|(h, _)| format!("{h}/{name}")).unwrap() }
@@ -20,8 +20,9 @@ pub async fn new_app() -> TestApp {
     let db = PgPoolOptions::new().max_connections(10).connect(&db_url(&name)).await.unwrap();
     MIGRATOR.run(&db).await.unwrap();
     let cfg = Config { database_url: db_url(&name), bind_addr: "127.0.0.1:0".into(), jwt_secret: "test-secret-test-secret-test-secret-1234".into(), access_ttl_minutes: 60, refresh_ttl_days: 1, cors_origins: vec![], run_jobs: false };
-    let app = build_app(AppState { db: db.clone(), cfg: Arc::new(cfg) });
-    let mut t = TestApp { app, db, token: String::new(), company: String::new(), name };
+    let state = AppState { db: db.clone(), cfg: Arc::new(cfg) };
+    let app = build_app(state.clone());
+    let mut t = TestApp { state, app, db, token: String::new(), company: String::new(), name };
     let (s, b) = t.raw(Method::POST, "/api/v1/setup", None, Some(json!({"company_code": "MTC", "company_name": "Meghna Trade Corporation", "bin": "000123456-0101", "admin_email": "owner@example.com", "admin_password": "Str0ngPassw0rd", "admin_name": "Owner"}))).await;
     assert_eq!(s, 201, "setup failed: {b}");
     t.company = b["data"]["company_id"].as_str().unwrap().to_string();

@@ -272,14 +272,16 @@ async fn fx_revalue(State(st): State<AppState>, user: AuthUser, Json(b): Json<Re
     let mut tx = st.db.begin().await?;
     let date = match b.date { Some(d) => d, None => db::today(&mut tx, user.company_id).await? };
     let mut lines = vec![]; let mut net_loss = Decimal::ZERO; let mut detail = vec![];
-    let ap: Vec<(Uuid, String, Decimal, Decimal)> = sqlx::query_as("SELECT l.party_id, l.currency, -sum(l.fc_amount), sum(l.credit - l.debit) FROM journal_lines l JOIN accounts a ON a.id = l.account_id AND a.system_key = 'ap_foreign' JOIN journal_entries e ON e.id = l.entry_id AND e.entry_date <= $2 WHERE l.company_id = $1 AND l.currency IS NOT NULL AND l.party_id IS NOT NULL GROUP BY 1, 2").bind(user.company_id).bind(date).fetch_all(&mut *tx).await?;
-    for (party, cur, fc, book) in ap {
+    // Each open foreign invoice (one per shipment) is revalued on its own, so later payments
+    // find the adjusted book value on the same shipment.
+    let ap: Vec<(Uuid, Uuid, String, Decimal, Decimal)> = sqlx::query_as("SELECT l.ref_id, max(l.party_id::text)::uuid, max(l.currency), -coalesce(sum(l.fc_amount), 0), sum(l.credit - l.debit) FROM journal_lines l JOIN accounts a ON a.id = l.account_id AND a.system_key = 'ap_foreign' JOIN journal_entries e ON e.id = l.entry_id AND e.entry_date <= $2 WHERE l.company_id = $1 AND l.ref_type = 'shipment' GROUP BY l.ref_id HAVING coalesce(sum(l.fc_amount), 0) <> 0").bind(user.company_id).bind(date).fetch_all(&mut *tx).await?;
+    for (shipment, party, cur, fc, book) in ap {
         let rate = rate_on(&mut tx, user.company_id, &cur, date).await?;
         let diff = r2(fc * rate) - book; // payable grew = loss
         if diff.is_zero() { continue; }
-        lines.push(JL::cr(Acc::Key("ap_foreign"), diff).party("supplier", party).memo(format!("Revalue {cur} {fc} at {rate}")));
+        lines.push(JL::cr(Acc::Key("ap_foreign"), diff).party("supplier", party).tag("shipment", shipment).memo(format!("Revalue {cur} {fc} at {rate}")));
         net_loss += diff;
-        detail.push(json!({"kind": "payable", "supplier_id": party, "currency": cur, "fc": fc, "rate": rate, "loss": diff}));
+        detail.push(json!({"kind": "payable", "shipment_id": shipment, "supplier_id": party, "currency": cur, "fc": fc, "rate": rate, "loss": diff}));
     }
     let banks: Vec<(Uuid, String, String, Decimal, Decimal)> = sqlx::query_as("SELECT b.account_id, b.name, b.currency, coalesce(sum(l.fc_amount), 0), coalesce(sum(l.debit - l.credit), 0) FROM bank_accounts b LEFT JOIN journal_lines l ON l.account_id = b.account_id LEFT JOIN journal_entries e ON e.id = l.entry_id WHERE b.company_id = $1 AND b.currency <> 'BDT' AND (e.entry_date IS NULL OR e.entry_date <= $2) GROUP BY 1, 2, 3").bind(user.company_id).bind(date).fetch_all(&mut *tx).await?;
     for (gl, name, cur, fc, book) in banks {

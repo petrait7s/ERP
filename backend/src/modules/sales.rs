@@ -332,7 +332,7 @@ async fn allocate_to(conn: &mut PgConnection, company: Uuid, receipt: Uuid, cust
         let (cust, total, paid, ret, status): (Uuid, Decimal, Decimal, Decimal, String) = sqlx::query_as("SELECT customer_id, total, paid_amount, returned_amount, status FROM sales_invoices WHERE id = $1 AND company_id = $2 FOR UPDATE").bind(a.invoice_id).bind(company).fetch_optional(&mut *conn).await?.ok_or_else(|| AppError::field(&format!("allocations[{i}].invoice_id"), "Invoice does not exist"))?;
         if cust != customer { return Err(AppError::field(&format!("allocations[{i}].invoice_id"), "This invoice belongs to another customer")); }
         if status == "cancelled" || amount > total - paid - ret { return Err(AppError::field(&format!("allocations[{i}].amount"), format!("Only Tk {} is outstanding on this invoice", total - paid - ret))); }
-        sqlx::query("INSERT INTO customer_receipt_allocations (receipt_id, invoice_id, amount) VALUES ($1,$2,$3)").bind(receipt).bind(a.invoice_id).bind(amount).execute(&mut *conn).await.map_err(|_| AppError::field("allocations", "Each invoice may appear only once"))?;
+        sqlx::query("INSERT INTO customer_receipt_allocations (receipt_id, invoice_id, amount) VALUES ($1,$2,$3) ON CONFLICT (receipt_id, invoice_id) DO UPDATE SET amount = customer_receipt_allocations.amount + EXCLUDED.amount").bind(receipt).bind(a.invoice_id).bind(amount).execute(&mut *conn).await?;
         sqlx::query("UPDATE sales_invoices SET paid_amount = paid_amount + $2, status = CASE WHEN paid_amount + $2 + returned_amount >= total THEN 'paid' ELSE 'partial' END WHERE id = $1").bind(a.invoice_id).bind(amount).execute(&mut *conn).await?;
         sum += amount;
     }
@@ -350,6 +350,8 @@ async fn create_receipt(State(st): State<AppState>, user: AuthUser, Json(b): Jso
     if bk.currency != "BDT" { return Err(AppError::field("bank_account_id", "Receive customer payments into a BDT account")); }
     let date = match b.receipt_date { Some(d) => d, None => db::today(&mut tx, user.company_id).await? };
     let gross = r2(b.gross_amount); let vds = r2(b.vds_amount); let tds = r2(b.tds_amount); let net = gross - vds - tds;
+    let mut seen = std::collections::HashSet::new();
+    if !b.allocations.iter().all(|a| seen.insert(a.invoice_id)) { return Err(AppError::field("allocations", "Each invoice may appear only once")); }
     let alloc_sum: Decimal = b.allocations.iter().map(|a| r2(a.amount)).sum();
     if alloc_sum > gross { return Err(AppError::field("allocations", "Allocations are more than the amount received")); }
     let no = db::next_no(&mut tx, user.company_id, "customer_receipt", "RCT").await?;

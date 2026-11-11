@@ -222,8 +222,7 @@ async fn post_run(State(st): State<AppState>, user: AuthUser, Path(id): Path<Uui
     let mut tx = st.db.begin().await?;
     let (status, no, _, y, m) = run_head(&mut tx, user.company_id, id).await?;
     if status != "approved" { return Err(AppError::rule(format!("{no} is {status}; it must be approved before posting"))); }
-    let (gross, ded, net, pf_er): (Decimal, Decimal, Decimal, Decimal) = sqlx::query_as("SELECT sum(gross - absent_deduction), 0, sum(net_pay), sum(pf_employer) FROM payslips WHERE run_id = $1").bind(id).fetch_one(&mut *tx).await?;
-    let _ = ded;
+    let (gross, net, pf_er): (Decimal, Decimal, Decimal) = sqlx::query_as("SELECT sum(gross - absent_deduction), sum(net_pay), sum(pf_employer) FROM payslips WHERE run_id = $1").bind(id).fetch_one(&mut *tx).await?;
     let (pf_emp, tax): (Decimal, Decimal) = sqlx::query_as("SELECT sum(pf_employee), sum(tax) FROM payslips WHERE run_id = $1").bind(id).fetch_one(&mut *tx).await?;
     let date = match body.and_then(|b| b.0.posting_date) { Some(d) => d, None => { let last = if m == 12 { NaiveDate::from_ymd_opt(y + 1, 1, 1) } else { NaiveDate::from_ymd_opt(y, m as u32 + 1, 1) }.unwrap().pred_opt().unwrap(); last } };
     let je = accounting::post(&mut tx, Post { company: user.company_id, branch: None, date, source_type: "payroll", source_id: Some(id), memo: &format!("Payroll {no} for {y}-{m:02}"), user: user.user_id }, vec![
@@ -281,7 +280,7 @@ pub fn api() -> Api {
         .delete("/payroll-runs/:id", "payroll.write", "Delete an unposted payroll run", delete_run)
         .post("/payroll-runs/:id/submit", "payroll.write", "Submit for approval", submit_run)
         .post("/payroll-runs/:id/post", "payroll.write", "Book the salary expense and liabilities", post_run).body(r#"{"posting_date":"2026-11-30"}"#)
-        .post("/payroll-runs/:id/pay", "payroll.write", "Pay net salaries from a bank account", pay_run).body(r#"{"bank_account_id":"<uuid>","payment_date":"2026-12-01"}"#)
+        .post("/payroll-runs/:id/pay", "finance.write", "Pay net salaries from a bank account (finance only)", pay_run).body(r#"{"bank_account_id":"<uuid>","payment_date":"2026-12-01"}"#)
 }
 
 #[cfg(test)]
